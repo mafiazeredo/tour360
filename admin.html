@@ -28,6 +28,7 @@
         
         label { font-size: 11px; color: #8c97a8; display: block; margin-top: 6px; }
         select, input, button, textarea { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #3b4457; background: #14171f; color: #fff; font-size: 12px; margin-top: 4px; }
+        input[type="file"] { padding: 5px; }
         input[type="range"] { padding: 0; margin-top: 4px; cursor: pointer; }
         button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 8px; }
         button.primary:hover { background: #e0a200; }
@@ -42,9 +43,9 @@
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
-        /* Modal Flutuante com Ajustes Integrados */
+        /* Modal Flutuante */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
-        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 390px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 400px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
         .modal-section { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 10px; margin-top: 10px; }
         .modal-buttons { display: flex; gap: 8px; margin-top: 14px; }
@@ -55,7 +56,7 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* Estilo dos círculos fixos */
+        /* Estilo dos círculos fixos sem desvio */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -80,6 +81,11 @@
         .pnlm-tooltip span {
             display: none !important;
         }
+
+        /* Lightbox para imagem cheia */
+        #lightbox-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; }
+        #lightbox-img { max-width: 85%; max-height: 80%; border-radius: 6px; border: 2px solid #f5b301; }
+        #lightbox-caption { margin-top: 10px; font-size: 14px; color: #fff; }
     </style>
 </head>
 <body>
@@ -127,7 +133,7 @@
     </div>
 </div>
 
-<!-- Modal Flutuante com Tipo e Controles de Visual -->
+<!-- Modal Flutuante -->
 <div id="modal-overlay">
     <div id="modal-box">
         <h3>Configurar Ponto Interativo</h3>
@@ -135,7 +141,7 @@
         <label>Tipo de Hotspot:</label>
         <select id="hotspotTypeSelect" onchange="toggleHotspotModalFields()">
             <option value="scene">Passagem de Ambiente (Trocar de Cômodo)</option>
-            <option value="info">Informação (Texto / Link)</option>
+            <option value="info">Informação (Texto / Foto / Link)</option>
         </select>
 
         <!-- Campos de Passagem -->
@@ -151,16 +157,29 @@
             <span id="yawInfoText" style="display:block; font-size:11px; color:#10b981; margin-top:3px;">Usando visão padrão (0°)</span>
         </div>
 
-        <!-- Campos de Informação -->
+        <!-- Campos de Informação com Suporte a Foto Local -->
         <div id="fieldInfoWrap" style="display: none; margin-top: 8px;">
-            <label>Texto da Informação:</label>
-            <input type="text" id="modalInfoText" placeholder="ex: Bancada em granito São Gabriel">
+            <label>Texto / Título da Informação:</label>
+            <input type="text" id="modalInfoText" placeholder="ex: Detalhe do Acabamento">
+
+            <label>Foto do Repositório (opcional):</label>
+            <select id="modalInfoImageSelect" onchange="applySelectedRepoImage()">
+                <option value="">-- Nenhuma selecionada --</option>
+            </select>
+
+            <label>OU Carregar Foto Local do Computador:</label>
+            <input type="file" id="modalLocalFileInput" accept="image/*" onchange="handleLocalImageUpload(event)">
+            <input type="hidden" id="modalFinalImageData">
+
+            <div id="imagePreviewContainer" style="display:none; margin-top:6px; text-align:center;">
+                <img id="imagePreview" src="" style="max-height:80px; border-radius:4px; border:1px solid #f5b301;">
+            </div>
 
             <label>Link Externo (opcional):</label>
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Ajuste Visual Integrado dentro da caixa -->
+        <!-- Ajuste Visual Integrado -->
         <div class="modal-section">
             <label style="color:#f5b301; font-weight:bold; margin-top:0;">Aparência do Círculo:</label>
             
@@ -178,6 +197,13 @@
     </div>
 </div>
 
+<!-- Visualizador Lightbox de Imagem Cheia -->
+<div id="lightbox-overlay" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Detalhe">
+    <div id="lightbox-caption"></div>
+    <span style="font-size: 11px; color: #aaa; margin-top: 6px;">(Clique em qualquer local para fechar)</span>
+</div>
+
 <script>
     var tourData = {
         "default": { "firstScene": "", "autoLoad": true, "sceneFadeDuration": 800 },
@@ -191,6 +217,7 @@
     var addPointMode = false;
     var isDragging = false;
     var startX = 0, startY = 0;
+    var availableRepoImages = [];
 
     function updateSpotStyle() {
         var size = document.getElementById('inputSpotSize').value;
@@ -209,20 +236,56 @@
         fetch("https://api.github.com/repos/" + repoUser + "/" + repoName + "/contents/")
             .then(function(res) { return res.json(); })
             .then(function(files) {
+                availableRepoImages = files.filter(function(f) { return f.type === "file" && /\.(jpg|jpeg|png|webp)$/i.test(f.name); });
+                
                 var selectRepo = document.getElementById('repoPhotosSelect');
                 selectRepo.innerHTML = '<option value="">-- Selecione uma foto --</option>';
-                var images = files.filter(function(f) { return f.type === "file" && /\.(jpg|jpeg|png)$/i.test(f.name); });
-                images.forEach(function(img) {
-                    var opt = document.createElement('option');
-                    opt.value = img.name;
-                    opt.text = img.name;
-                    selectRepo.appendChild(opt);
+
+                var selectModalImg = document.getElementById('modalInfoImageSelect');
+                selectModalImg.innerHTML = '<option value="">-- Nenhuma selecionada --</option>';
+
+                availableRepoImages.forEach(function(img) {
+                    var opt1 = document.createElement('option');
+                    opt1.value = img.name;
+                    opt1.text = img.name;
+                    selectRepo.appendChild(opt1);
+
+                    var opt2 = document.createElement('option');
+                    opt2.value = img.name;
+                    opt2.text = img.name;
+                    selectModalImg.appendChild(opt2);
                 });
             })
             .catch(function() {
                 document.getElementById('repoPhotosSelect').innerHTML = '<option value="">Erro ao carregar lista</option>';
             });
     });
+
+    function applySelectedRepoImage() {
+        var val = document.getElementById('modalInfoImageSelect').value;
+        if (val) {
+            document.getElementById('modalFinalImageData').value = val;
+            document.getElementById('imagePreview').src = val;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+            document.getElementById('modalLocalFileInput').value = '';
+        } else {
+            document.getElementById('modalFinalImageData').value = '';
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+        }
+    }
+
+    function handleLocalImageUpload(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+            document.getElementById('modalFinalImageData').value = evt.target.result;
+            document.getElementById('imagePreview').src = evt.target.result;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+            document.getElementById('modalInfoImageSelect').value = '';
+        };
+        reader.readAsDataURL(file);
+    }
 
     function toggleHotspotModalFields() {
         var type = document.getElementById('hotspotTypeSelect').value;
@@ -282,14 +345,70 @@
         }
     }
 
+    function renderCustomHotspotTooltip(hotSpotDiv, args) {
+        hotSpotDiv.classList.add('custom-tooltip');
+        var container = document.createElement('div');
+        container.style.cssText = 'background: rgba(20,23,31,0.92); border: 1px solid #f5b301; padding: 8px 10px; border-radius: 6px; color: #fff; max-width: 220px; font-size: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);';
+
+        if (args.text) {
+            var title = document.createElement('div');
+            title.style.fontWeight = 'bold';
+            title.style.marginBottom = args.image ? '6px' : '0';
+            title.innerText = args.text;
+            container.appendChild(title);
+        }
+
+        if (args.image) {
+            var img = document.createElement('img');
+            img.src = args.image;
+            img.style.cssText = 'width: 100%; max-height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; display: block;';
+            img.onclick = function(e) {
+                e.stopPropagation();
+                openLightbox(args.image, args.text);
+            };
+            container.appendChild(img);
+        }
+
+        if (args.url) {
+            var link = document.createElement('a');
+            link.href = args.url;
+            link.target = '_blank';
+            link.style.cssText = 'display: inline-block; margin-top: 6px; color: #f5b301; text-decoration: underline; font-size: 11px;';
+            link.innerText = 'Abrir link';
+            container.appendChild(link);
+        }
+
+        hotSpotDiv.appendChild(container);
+    }
+
+    function openLightbox(src, caption) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox-caption').innerText = caption || '';
+        document.getElementById('lightbox-overlay').style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox-overlay').style.display = 'none';
+    }
+
     function rebuildViewer(targetSceneId) {
         currentSceneId = targetSceneId;
         renderScenesList();
         if (viewer) { viewer.destroy(); viewer = null; }
 
+        var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
+        for (var sc in cleanScenes) {
+            cleanScenes[sc].hotSpots.forEach(function(sp) {
+                if (sp.type === 'info' && (sp.image || sp.text)) {
+                    sp.createTooltipFunc = renderCustomHotspotTooltip;
+                    sp.createTooltipArgs = { text: sp.text, image: sp.image, url: sp.URL };
+                }
+            });
+        }
+
         viewer = pannellum.viewer('panorama', {
             "default": tourData.default,
-            "scenes": tourData.scenes
+            "scenes": cleanScenes
         });
 
         viewer.loadScene(targetSceneId);
@@ -330,6 +449,10 @@
         updateDefaultText();
         document.getElementById('modalInfoText').value = '';
         document.getElementById('modalInfoUrl').value = '';
+        document.getElementById('modalFinalImageData').value = '';
+        document.getElementById('modalInfoImageSelect').value = '';
+        document.getElementById('modalLocalFileInput').value = '';
+        document.getElementById('imagePreviewContainer').style.display = 'none';
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
@@ -375,6 +498,8 @@
             spotObj.targetYaw = tempTargetYaw;
         } else {
             spotObj.text = document.getElementById('modalInfoText').value || 'Informação';
+            var imgData = document.getElementById('modalFinalImageData').value;
+            if (imgData) spotObj.image = imgData;
             var linkUrl = document.getElementById('modalInfoUrl').value.trim();
             if (linkUrl) spotObj.URL = linkUrl;
         }
