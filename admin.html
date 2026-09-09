@@ -9,15 +9,17 @@
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: sans-serif; }
-        #sidebar { width: 340px; background: #1f242d; color: #fff; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        #sidebar { width: 350px; background: #1f242d; color: #fff; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         #panorama { flex: 1; height: 100%; position: relative; }
         h2, h3 { margin: 0 0 5px 0; font-size: 16px; color: #f5b301; }
         .box { background: #2a313d; padding: 10px; border-radius: 6px; }
         label { display: block; font-size: 12px; margin-top: 6px; color: #bbb; }
         input, select, button { width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #444; background: #16191f; color: #fff; font-size: 13px; }
-        button { background: #f5b301; color: #000; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; }
+        button { background: #f5b301; color: #000; font-weight: bold; cursor: pointer; border: none; margin-top: 8px; }
         button:hover { background: #e0a200; }
-        textarea { width: 100%; height: 140px; background: #111; color: #0f0; font-family: monospace; font-size: 11px; padding: 6px; border: 1px solid #444; margin-top: 8px; }
+        .btn-sec { background: #3b4252; color: #fff; border: 1px solid #555; }
+        .btn-sec:hover { background: #4c566a; }
+        textarea { width: 100%; height: 130px; background: #111; color: #0f0; font-family: monospace; font-size: 11px; padding: 6px; border: 1px solid #444; margin-top: 8px; }
         .info { font-size: 12px; color: #8bc34a; line-height: 1.4; }
     </style>
 </head>
@@ -44,23 +46,29 @@
 
     <div class="box">
         <h3>2. Posicionar Ponto (Hotspot)</h3>
-        <p class="info">Clique em qualquer local na imagem 360 à direita para marcar o ponto de passagem.</p>
+        <p class="info">1º Clique na imagem onde a seta deve ficar.</p>
         <label>Pitch (Vertical):</label>
         <input type="text" id="spotPitch" readonly>
         <label>Yaw (Horizontal):</label>
         <input type="text" id="spotYaw" readonly>
+        
         <label>Leva para qual ambiente?:</label>
         <select id="spotTargetScene"></select>
+        
         <label>Texto da Seta:</label>
         <input type="text" id="spotText" placeholder="ex: Ir para o Corredor">
-        <label>Ângulo ao entrar (Target Yaw):</label>
-        <input type="number" id="spotTargetYaw" value="0">
-        <button onclick="addHotspot()">Salvar Ponto nesta Cena</button>
+        
+        <label>Ângulo de entrada no destino:</label>
+        <input type="number" id="spotTargetYaw" value="0" readonly>
+        
+        <button type="button" class="btn-sec" onclick="previewAndAlignTarget()">1. Olhar ambiente de destino</button>
+        <button type="button" class="btn-sec" onclick="captureCurrentYaw()">2. Usar esta visão como entrada</button>
+        
+        <button onclick="addHotspot()" style="margin-top: 14px;">Salvar Ponto de Passagem</button>
     </div>
 
     <div class="box">
         <h3>3. Exportar Tour</h3>
-        <p class="info">Gera a configuração final para rodar no site do cliente.</p>
         <button onclick="exportConfig()">Gerar Código Final</button>
         <textarea id="output" readonly placeholder="O código do tour configurado aparecerá aqui..."></textarea>
     </div>
@@ -77,7 +85,6 @@
     var viewer = null;
     var currentScene = "";
 
-    // Busca automática dos arquivos de imagem no GitHub
     window.addEventListener('load', function() {
         var repoUser = "mafiazeredo";
         var repoName = "tour360";
@@ -109,7 +116,7 @@
                     }
                 };
             })
-            .catch(function(err) {
+            .catch(function() {
                 var select = document.getElementById('sceneFile');
                 select.innerHTML = '<option value="">Erro ao carregar lista de arquivos</option>';
             });
@@ -187,6 +194,25 @@
         }
     }
 
+    // Leva para o cômodo de destino para girar e alinhar visualmente
+    function previewAndAlignTarget() {
+        var target = document.getElementById('spotTargetScene').value;
+        if (!target) {
+            alert('Selecione o ambiente de destino primeiro!');
+            return;
+        }
+        viewer.loadScene(target);
+    }
+
+    // Captura o ângulo exato em que a câmera está parada
+    function captureCurrentYaw() {
+        if (!viewer) return;
+        var currentYaw = viewer.getYaw();
+        document.getElementById('spotTargetYaw').value = Math.round(currentYaw);
+        alert('Ângulo capturado: ' + Math.round(currentYaw) + '°. Retornando para a cena anterior para concluir o ponto...');
+        viewer.loadScene(currentScene);
+    }
+
     function addHotspot() {
         var pitch = parseFloat(document.getElementById('spotPitch').value);
         var yaw = parseFloat(document.getElementById('spotYaw').value);
@@ -195,7 +221,7 @@
         var targetYaw = parseFloat(document.getElementById('spotTargetYaw').value) || 0;
 
         if (isNaN(pitch) || isNaN(yaw)) {
-            alert('Clique em algum ponto da imagem 360 para capturar as coordenadas primeiro!');
+            alert('Clique na imagem 360 para capturar o ponto onde a seta deve ficar!');
             return;
         }
 
@@ -209,7 +235,7 @@
         });
 
         initViewer(currentScene);
-        alert('Ponto adicionado com sucesso!');
+        alert('Ponto salvo com sucesso!');
     }
 
     function exportConfig() {
