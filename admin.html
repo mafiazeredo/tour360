@@ -43,7 +43,6 @@
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
-        /* Modal Flutuante */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
         #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 400px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
@@ -56,7 +55,7 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* Estilo dos círculos fixos sem desvio */
+        /* CÍRCULO LIMPO E TRAVADO NA CENA */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -78,14 +77,43 @@
             background: #ffffff !important;
         }
 
-        .pnlm-tooltip span {
+        /* ELIMINA QUALQUER BALÃO OU CARD DO PANNELLUM */
+        .pnlm-tooltip,
+        .pnlm-tooltip span,
+        .custom-tooltip {
             display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
         }
 
-        /* Lightbox para imagem cheia */
-        #lightbox-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; }
-        #lightbox-img { max-width: 85%; max-height: 80%; border-radius: 6px; border: 2px solid #f5b301; }
-        #lightbox-caption { margin-top: 10px; font-size: 14px; color: #fff; }
+        /* LIGHTBOX DE IMAGEM CHEIA AO CLICAR */
+        #lightbox-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.85); 
+            z-index: 300; 
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column; 
+            cursor: pointer; 
+        }
+        #lightbox-img { 
+            max-width: 85%; 
+            max-height: 80%; 
+            border-radius: 6px; 
+            border: 2px solid #f5b301; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        #lightbox-caption { 
+            margin-top: 12px; 
+            font-size: 15px; 
+            font-weight: 500; 
+            color: #fff; 
+        }
     </style>
 </head>
 <body>
@@ -141,7 +169,7 @@
         <label>Tipo de Hotspot:</label>
         <select id="hotspotTypeSelect" onchange="toggleHotspotModalFields()">
             <option value="scene">Passagem de Ambiente (Trocar de Cômodo)</option>
-            <option value="info">Informação (Texto / Foto / Link)</option>
+            <option value="info">Foto Detalhada / Informação</option>
         </select>
 
         <!-- Campos de Passagem -->
@@ -149,7 +177,7 @@
             <label>Levar para qual cômodo?</label>
             <select id="modalTargetScene" onchange="updateDefaultText()"></select>
 
-            <label>Texto da Seta:</label>
+            <label>Texto de identificação:</label>
             <input type="text" id="modalText" placeholder="ex: Ir para o Corredor">
 
             <label>Direção da visão ao chegar:</label>
@@ -157,12 +185,12 @@
             <span id="yawInfoText" style="display:block; font-size:11px; color:#10b981; margin-top:3px;">Usando visão padrão (0°)</span>
         </div>
 
-        <!-- Campos de Informação com Suporte a Foto Local -->
+        <!-- Campos de Foto / Info -->
         <div id="fieldInfoWrap" style="display: none; margin-top: 8px;">
-            <label>Texto / Título da Informação:</label>
+            <label>Título ou Legenda da Foto:</label>
             <input type="text" id="modalInfoText" placeholder="ex: Detalhe do Acabamento">
 
-            <label>Foto do Repositório (opcional):</label>
+            <label>Foto do Repositório:</label>
             <select id="modalInfoImageSelect" onchange="applySelectedRepoImage()">
                 <option value="">-- Nenhuma selecionada --</option>
             </select>
@@ -175,7 +203,7 @@
                 <img id="imagePreview" src="" style="max-height:80px; border-radius:4px; border:1px solid #f5b301;">
             </div>
 
-            <label>Link Externo (opcional):</label>
+            <label>Link Externo ao Clicar (opcional):</label>
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
@@ -345,42 +373,6 @@
         }
     }
 
-    function renderCustomHotspotTooltip(hotSpotDiv, args) {
-        hotSpotDiv.classList.add('custom-tooltip');
-        var container = document.createElement('div');
-        container.style.cssText = 'background: rgba(20,23,31,0.92); border: 1px solid #f5b301; padding: 8px 10px; border-radius: 6px; color: #fff; max-width: 220px; font-size: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);';
-
-        if (args.text) {
-            var title = document.createElement('div');
-            title.style.fontWeight = 'bold';
-            title.style.marginBottom = args.image ? '6px' : '0';
-            title.innerText = args.text;
-            container.appendChild(title);
-        }
-
-        if (args.image) {
-            var img = document.createElement('img');
-            img.src = args.image;
-            img.style.cssText = 'width: 100%; max-height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; display: block;';
-            img.onclick = function(e) {
-                e.stopPropagation();
-                openLightbox(args.image, args.text);
-            };
-            container.appendChild(img);
-        }
-
-        if (args.url) {
-            var link = document.createElement('a');
-            link.href = args.url;
-            link.target = '_blank';
-            link.style.cssText = 'display: inline-block; margin-top: 6px; color: #f5b301; text-decoration: underline; font-size: 11px;';
-            link.innerText = 'Abrir link';
-            container.appendChild(link);
-        }
-
-        hotSpotDiv.appendChild(container);
-    }
-
     function openLightbox(src, caption) {
         document.getElementById('lightbox-img').src = src;
         document.getElementById('lightbox-caption').innerText = caption || '';
@@ -397,11 +389,18 @@
         if (viewer) { viewer.destroy(); viewer = null; }
 
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
+        
+        // Conecta o evento de clique direto para abrir o Lightbox, sem balão flutuante
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
-                if (sp.type === 'info' && (sp.image || sp.text)) {
-                    sp.createTooltipFunc = renderCustomHotspotTooltip;
-                    sp.createTooltipArgs = { text: sp.text, image: sp.image, url: sp.URL };
+                if (sp.type === 'info') {
+                    sp.clickHandlerFunc = function() {
+                        if (sp.image) {
+                            openLightbox(sp.image, sp.text);
+                        } else if (sp.URL) {
+                            window.open(sp.URL, '_blank');
+                        }
+                    };
                 }
             });
         }
@@ -497,7 +496,7 @@
             spotObj.sceneId = document.getElementById('modalTargetScene').value;
             spotObj.targetYaw = tempTargetYaw;
         } else {
-            spotObj.text = document.getElementById('modalInfoText').value || 'Informação';
+            spotObj.text = document.getElementById('modalInfoText').value || 'Detalhe';
             var imgData = document.getElementById('modalFinalImageData').value;
             if (imgData) spotObj.image = imgData;
             var linkUrl = document.getElementById('modalInfoUrl').value.trim();
@@ -514,7 +513,7 @@
         var area = document.getElementById('finalCodeArea');
         area.value = JSON.stringify(tourData, null, 4);
         area.style.display = 'block';
-        alert('Configuração final do tour gerada com sucesso!');
+        alert('Configuração final gerada com sucesso!');
     }
 </script>
 </body>
