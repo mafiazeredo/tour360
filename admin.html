@@ -43,6 +43,7 @@
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
+        /* Modal Flutuante */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
         #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 400px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
@@ -55,8 +56,8 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* CÍRCULO LIMPO E TRAVADO NA CENA */
-        .pnlm-hotspot-base {
+        /* CÍRCULO NATIVO LIMPO E VISÍVEL */
+        .spot-circle {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
             margin-left: calc(var(--spot-size) / -2) !important;
@@ -68,25 +69,20 @@
             box-shadow: 0 0 8px rgba(0,0,0,0.6) !important;
             cursor: pointer !important;
             display: block !important;
-            transform-origin: center center;
             transition: opacity 0.15s ease, background 0.15s ease !important;
         }
 
-        .pnlm-hotspot-base:hover {
+        .spot-circle:hover {
             opacity: 1 !important;
             background: #ffffff !important;
         }
 
-        /* ELIMINA QUALQUER BALÃO OU CARD DO PANNELLUM */
-        .pnlm-tooltip,
-        .pnlm-tooltip span,
-        .custom-tooltip {
+        /* Esconde apenas o balãozinho de texto, mantendo o círculo perfeitamente desenhado */
+        .spot-circle span {
             display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
         }
 
-        /* LIGHTBOX DE IMAGEM CHEIA AO CLICAR */
+        /* Lightbox de imagem cheia */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -390,17 +386,20 @@
 
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
         
-        // Conecta o evento de clique direto para abrir o Lightbox, sem balão flutuante
+        // Aplica o círculo visível em todos os pontos e configura ação direta
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
+                sp.cssClass = 'spot-circle';
                 if (sp.type === 'info') {
-                    sp.clickHandlerFunc = function() {
-                        if (sp.image) {
-                            openLightbox(sp.image, sp.text);
-                        } else if (sp.URL) {
-                            window.open(sp.URL, '_blank');
-                        }
-                    };
+                    sp.clickHandlerFunc = (function(spot) {
+                        return function() {
+                            if (spot.image) {
+                                openLightbox(spot.image, spot.text);
+                            } else if (spot.URL) {
+                                window.open(spot.URL, '_blank');
+                            }
+                        };
+                    })(sp);
                 }
             });
         }
