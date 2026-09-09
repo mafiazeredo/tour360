@@ -29,6 +29,14 @@
             "autoLoad": true,
             "autoRotate": -2
         });
+
+        // Personaliza a mensagem do clique com botão direito
+        window.addEventListener('load', function() {
+            var aboutBox = document.querySelector('.pnlm-about-msg');
+            if (aboutBox) {
+                aboutBox.innerHTML = '<a href="https://marcellofotografia.com" target="_blank" style="color:#fff; text-decoration:none;">Marcello Fotografia | Tour 360°</a>';
+            }
+        });
     </script>
 </body>
 </html>
