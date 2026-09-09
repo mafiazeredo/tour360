@@ -14,7 +14,8 @@
         #sidebar-header h1 { font-size: 18px; margin: 0 0 6px 0; color: #f5b301; }
         #sidebar-header p { font-size: 12px; color: #8c97a8; margin: 0; }
         #sidebar-content { padding: 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
-        #panorama { flex: 1; height: 100%; position: relative; }
+        #panorama-wrap { flex: 1; height: 100%; position: relative; }
+        #panorama { width: 100%; height: 100%; }
         
         .card { background: #222834; border: 1px solid #2e3748; border-radius: 8px; padding: 14px; }
         .card-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #e1e7f0; display: flex; align-items: center; gap: 8px; }
@@ -31,15 +32,21 @@
         .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
         .badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
         
-        #instruction-banner { position: absolute; top: 16px; left: 16px; right: 16px; background: rgba(20, 23, 31, 0.92); border: 1px solid #f5b301; padding: 12px 18px; border-radius: 8px; z-index: 100; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(4px); }
+        #instruction-banner { position: absolute; top: 16px; left: 16px; right: 16px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 12px 18px; border-radius: 8px; z-index: 100; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(4px); pointer-events: none; }
         #instruction-banner span { font-size: 14px; font-weight: 500; }
         
         /* Modal flutuante */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
-        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 340px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 380px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 16px; color: #f5b301; }
         .modal-buttons { display: flex; gap: 8px; margin-top: 14px; }
         .btn-cancel { background: #3b4457; color: #fff; border: none; cursor: pointer; }
+        .btn-preview { background: #2d3748; color: #f5b301; border: 1px dashed #f5b301; cursor: pointer; margin-top: 8px; }
+
+        /* Banner de alinhamento visual de entrada */
+        #align-banner { display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(26, 30, 38, 0.95); border: 2px solid #10b981; padding: 14px 22px; border-radius: 8px; z-index: 150; box-shadow: 0 8px 24px rgba(0,0,0,0.6); text-align: center; }
+        #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
+        #align-banner button { width: auto; padding: 8px 18px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -51,7 +58,7 @@
     </div>
 
     <div id="sidebar-content">
-        <!-- Passo 1: Fotos do Tour -->
+        <!-- Passo 1: Fotos -->
         <div class="card">
             <div class="card-title">
                 <span class="step-number">1</span>
@@ -72,7 +79,7 @@
                 <span class="step-number">2</span>
                 Passagens / Conexões
             </div>
-            <p style="font-size: 12px; color: #8c97a8; margin: 0 0 8px 0;">Para girar livremente sem marcar ponto, deixe desativado. Ative apenas quando for clicar na porta.</p>
+            <p style="font-size: 12px; color: #8c97a8; margin: 0 0 8px 0;">Arraste para girar normalmente. Ative o modo abaixo apenas para marcar a porta.</p>
             <button id="addPointModeBtn" class="tool-btn" onclick="toggleAddPointMode()">📍 Ativar Modo: Marcar Ponto</button>
         </div>
 
@@ -88,9 +95,17 @@
     </div>
 </div>
 
-<div id="panorama">
+<div id="panorama-wrap">
+    <div id="panorama"></div>
+    
     <div id="instruction-banner">
-        <span id="instructionText">Adicione um cômodo no menu à esquerda para iniciar.</span>
+        <span id="instructionText">Adicione fotos no menu à esquerda para iniciar.</span>
+    </div>
+
+    <!-- Banner flutuante ativo durante o alinhamento visual de destino -->
+    <div id="align-banner">
+        <p>🔄 Gire a tela até olhar exatamente para a direção de entrada deste cômodo.</p>
+        <button onclick="confirmTargetYaw()">✓ Salvar esta direção de visão</button>
     </div>
 </div>
 
@@ -98,11 +113,15 @@
 <div id="modal-overlay">
     <div id="modal-box">
         <h3>Criar Passagem de Ambiente</h3>
-        <label style="font-size: 12px; color: #8c97a8;">Para qual cômodo essa passagem deve levar?</label>
-        <select id="modalTargetScene"></select>
+        <label style="font-size: 12px; color: #8c97a8;">Para qual cômodo essa passagem leva?</label>
+        <select id="modalTargetScene" onchange="updateDefaultText()"></select>
         
         <label style="font-size: 12px; color: #8c97a8; margin-top: 10px; display: block;">Texto da seta:</label>
         <input type="text" id="modalText" placeholder="ex: Ir para o Corredor">
+
+        <label style="font-size: 12px; color: #8c97a8; margin-top: 10px; display: block;">Direção da visão ao entrar:</label>
+        <button type="button" class="btn-preview" onclick="startVisualAlign()">🎯 Alinhar visão na tela de destino</button>
+        <span id="yawInfoText" style="display:block; font-size:11px; color:#10b981; margin-top:4px;">Usando visão padrão (0°)</span>
         
         <div class="modal-buttons">
             <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -120,6 +139,7 @@
     var viewer = null;
     var currentSceneId = "";
     var tempCoords = null;
+    var tempTargetYaw = 0;
     var addPointMode = false;
     var isDragging = false;
     var startX = 0, startY = 0;
@@ -152,7 +172,7 @@
         if (addPointMode) {
             btn.classList.add('active');
             btn.innerText = '✓ Modo Marcar Ativo (Clique na porta)';
-            document.getElementById('instructionText').innerText = '🎯 Clique com o botão esquerdo exatamente onde quer posicionar a passagem.';
+            document.getElementById('instructionText').innerText = '🎯 Clique exatamente na porta ou no chão onde a seta deve ficar.';
         } else {
             btn.classList.remove('active');
             btn.innerText = '📍 Ativar Modo: Marcar Ponto';
@@ -179,7 +199,7 @@
         if (!tourData.default.firstScene) tourData.default.firstScene = id;
 
         renderScenesList();
-        loadSceneInViewer(id);
+        rebuildViewer(id);
     }
 
     function renderScenesList() {
@@ -191,33 +211,39 @@
             chip.className = 'photo-chip' + (id === currentSceneId ? ' active' : '');
             chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' passagens</span>';
             chip.onclick = (function(sceneId) {
-                return function() { loadSceneInViewer(sceneId); };
+                return function() { 
+                    switchSceneView(sceneId); 
+                };
             })(id);
             container.appendChild(chip);
         }
     }
 
-    function loadSceneInViewer(sceneId) {
+    function switchSceneView(sceneId) {
         currentSceneId = sceneId;
         renderScenesList();
+        if (viewer) {
+            viewer.loadScene(sceneId);
+            document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
+        }
+    }
 
-        var container = document.getElementById('panorama');
-        // Mantém apenas o banner de instrução e limpa qualquer viewer anterior
-        container.innerHTML = '<div id="instruction-banner"><span id="instructionText"></span></div>';
+    function rebuildViewer(targetSceneId) {
+        currentSceneId = targetSceneId;
+        renderScenesList();
+
+        if (viewer) {
+            viewer.destroy();
+            viewer = null;
+        }
 
         viewer = pannellum.viewer('panorama', {
             "default": tourData.default,
             "scenes": tourData.scenes
         });
 
-        viewer.loadScene(sceneId);
-
-        if (addPointMode) {
-            document.getElementById('instructionText').innerText = '🎯 Clique com o botão esquerdo exatamente onde quer posicionar a passagem.';
-        } else {
-            document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
-        }
-
+        viewer.loadScene(targetSceneId);
+        document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[targetSceneId].title + '". Arraste para girar livremente.';
         setupClickHandler();
     }
 
@@ -231,7 +257,7 @@
         };
 
         el.onmousemove = function(e) {
-            if (Math.abs(e.clientX - startX) > 4 || Math.abs(e.clientY - startY) > 4) {
+            if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
                 isDragging = true;
             }
         };
@@ -241,6 +267,8 @@
                 var coords = viewer.mouseEventToCoords(e);
                 if (coords && coords.length >= 2) {
                     tempCoords = coords;
+                    tempTargetYaw = 0;
+                    document.getElementById('yawInfoText').innerText = 'Usando visão padrão (0°)';
                     openModal();
                 }
             }
@@ -250,7 +278,7 @@
     function openModal() {
         var otherScenes = Object.keys(tourData.scenes).filter(function(id) { return id !== currentSceneId; });
         if (otherScenes.length === 0) {
-            alert('Adicione outro cômodo no menu para conectar a este!');
+            alert('Adicione pelo menos mais um cômodo no Passo 1 para conectar a este!');
             return;
         }
 
@@ -263,13 +291,41 @@
             select.appendChild(opt);
         });
 
-        document.getElementById('modalText').value = 'Ir para ' + tourData.scenes[otherScenes[0]].title;
+        updateDefaultText();
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+
+    function updateDefaultText() {
+        var select = document.getElementById('modalTargetScene');
+        var targetTitle = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '';
+        document.getElementById('modalText').value = 'Ir para ' + targetTitle;
+    }
+
+    function startVisualAlign() {
+        var targetSceneId = document.getElementById('modalTargetScene').value;
+        document.getElementById('modal-overlay').style.display = 'none';
+        
+        // Leva a visualização temporariamente para o cômodo de destino
+        viewer.loadScene(targetSceneId);
+        document.getElementById('align-banner').style.display = 'block';
+    }
+
+    function confirmTargetYaw() {
+        tempTargetYaw = Math.round(viewer.getYaw());
+        document.getElementById('align-banner').style.display = 'none';
+        
+        // Retorna para o cômodo de origem e reabre a janela
+        viewer.loadScene(currentSceneId);
+        document.getElementById('yawInfoText').innerText = '✓ Visão de entrada alinhada em: ' + tempTargetYaw + '°';
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
     function closeModal() {
         document.getElementById('modal-overlay').style.display = 'none';
         tempCoords = null;
+        if (viewer.getScene() !== currentSceneId) {
+            viewer.loadScene(currentSceneId);
+        }
     }
 
     function confirmHotspot() {
@@ -281,19 +337,22 @@
             "yaw": parseFloat(tempCoords[1].toFixed(2)),
             "type": "scene",
             "text": text,
-            "sceneId": targetSceneId
+            "sceneId": targetSceneId,
+            "targetYaw": tempTargetYaw
         });
 
         closeModal();
-        toggleAddPointMode(); // Desativa o modo ponto após criar
-        loadSceneInViewer(currentSceneId);
+        if (addPointMode) toggleAddPointMode();
+        
+        // Recria a instância preservando os dois ambientes e os novos pontos
+        rebuildViewer(currentSceneId);
     }
 
     function generateFinalCode() {
         var area = document.getElementById('finalCodeArea');
         area.value = JSON.stringify(tourData, null, 4);
         area.style.display = 'block';
-        alert('Código final do tour gerado com sucesso!');
+        alert('Código final gerado com sucesso! Pronto para colar no visualizador.');
     }
 </script>
 </body>
