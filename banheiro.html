@@ -23,48 +23,49 @@
 <body>
     <div id="panorama"></div>
     <script>
-        var viewer = pannellum.viewer('panorama', {
-            "default": {
-                "firstScene": "banheiro",
-                "autoLoad": true,
-                "sceneFadeDuration": 1000,
-                "hotSpotDebug": true
-            },
-            "scenes": {
-                "banheiro": {
-                    "title": "Banheiro",
-                    "type": "equirectangular",
-                    "panorama": "banheiro.jpg",
-                    "hotSpots": [
-                        {
-                            "pitch": -2,
-                            "yaw": 24,
-                            "type": "scene",
-                            "text": "Ir para o Corredor",
-                            "sceneId": "corredor",
-                            "targetYaw": 0
-                        }
-                    ]
-                },
-                "corredor": {
-                    "title": "Corredor",
-                    "type": "equirectangular",
-                    "panorama": "corredor.jpg",
-                    "hotSpots": [
-                        {
-                            "pitch": -2,
-                            "yaw": 180,
-                            "type": "scene",
-                            "text": "Voltar para o Banheiro",
-                            "sceneId": "banheiro",
-                            "targetYaw": -156
-                        }
-                    ]
+        var tourConfig = {
+    "default": {
+        "firstScene": "banheiro",
+        "autoLoad": true,
+        "sceneFadeDuration": 800
+    },
+    "scenes": {
+        "banheiro": {
+            "title": "Banheiro",
+            "type": "equirectangular",
+            "panorama": "banheiro.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -25.13,
+                    "yaw": 35.75,
+                    "type": "scene",
+                    "text": "Ir para Corredor",
+                    "sceneId": "corredor",
+                    "targetYaw": 77,
+                    "div": {}
                 }
-            }
-        });
+            ]
+        },
+        "corredor": {
+            "title": "Corredor",
+            "type": "equirectangular",
+            "panorama": "corredor.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -47.73,
+                    "yaw": -102.11,
+                    "type": "scene",
+                    "text": "Ir para Banheiro",
+                    "sceneId": "banheiro",
+                    "targetYaw": -153
+                }
+            ]
+        }
+    }
+};
 
-        // Personaliza a mensagem de contexto
+        pannellum.viewer('panorama', tourConfig);
+
         window.addEventListener('load', function() {
             var aboutBox = document.querySelector('.pnlm-about-msg');
             if (aboutBox) {
