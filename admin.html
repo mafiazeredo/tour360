@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criador de Tour 360 - Avançado</title>
+    <title>Criador de Tour 360</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <style>
@@ -37,7 +37,7 @@
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
-        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 380px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 400px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
         .modal-buttons { display: flex; gap: 8px; margin-top: 12px; }
         .btn-cancel { background: #3b4457; color: #fff; border: none; cursor: pointer; }
@@ -46,6 +46,11 @@
         #align-banner { display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(26, 30, 38, 0.95); border: 2px solid #10b981; padding: 12px 20px; border-radius: 8px; z-index: 150; text-align: center; }
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
+
+        /* Lightbox para visualização de imagem cheia */
+        #lightbox-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; }
+        #lightbox-overlay img { max-width: 85%; max-height: 80%; border-radius: 6px; border: 2px solid #f5b301; }
+        #lightbox-caption { margin-top: 10px; font-size: 14px; color: #fff; }
     </style>
 </head>
 <body>
@@ -53,34 +58,17 @@
 <div id="sidebar">
     <div id="sidebar-header">
         <h1>Criador de Tour 360</h1>
-        <p>Painel com Hotspots Info & Multiresolução</p>
+        <p>Painel Visual Simplificado</p>
     </div>
 
     <div id="sidebar-content">
         <!-- Passo 1: Cenas -->
         <div class="card">
             <div class="card-title"><span class="step-number">1</span> Ambientes (Cenas)</div>
-            
-            <label>Tipo de Mídia:</label>
-            <select id="mediaTypeSelect" onchange="toggleMediaType()">
-                <option value="equirectangular">Foto Equirretangular Única (JPG/PNG)</option>
-                <option value="multires">Multiresolução / Cubemap (Pasta de Tiles)</option>
+            <label>Foto Equirretangular do Repositório:</label>
+            <select id="repoPhotosSelect">
+                <option value="">Carregando fotos do GitHub...</option>
             </select>
-
-            <div id="boxEquirect">
-                <label>Foto do Repositório:</label>
-                <select id="repoPhotosSelect">
-                    <option value="">Carregando fotos do GitHub...</option>
-                </select>
-            </div>
-
-            <div id="boxMultires" style="display: none;">
-                <label>ID / Nome da Pasta do Cubemap:</label>
-                <input type="text" id="multiresPath" placeholder="ex: tiles/sala">
-                <label>Configuração JSON do Cubemap (opcional se padrão):</label>
-                <input type="text" id="multiresConfigFile" placeholder="ex: tiles/sala/config.json">
-            </div>
-
             <button class="primary" onclick="addPhotoToTour()">+ Adicionar este Ambiente</button>
             <div style="margin-top: 10px;" id="tourScenesList"></div>
         </div>
@@ -88,7 +76,7 @@
         <!-- Passo 2: Adicionar Ponto -->
         <div class="card">
             <div class="card-title"><span class="step-number">2</span> Hotspots Interativos</div>
-            <p style="font-size: 11px; color: #8c97a8; margin: 0 0 6px 0;">Ative o botão para clicar no local exato do ponto.</p>
+            <p style="font-size: 11px; color: #8c97a8; margin: 0 0 6px 0;">Arraste para olhar. Ative o botão apenas quando for clicar no ponto.</p>
             <button id="addPointModeBtn" class="tool-btn" onclick="toggleAddPointMode()">📍 Ativar Modo: Marcar Ponto</button>
         </div>
 
@@ -110,7 +98,7 @@
     </div>
 </div>
 
-<!-- Modal Flutuante Unificado (Passagem ou Informação) -->
+<!-- Modal Flutuante de Configuração do Ponto -->
 <div id="modal-overlay">
     <div id="modal-box">
         <h3>Adicionar Ponto Interativo</h3>
@@ -118,7 +106,7 @@
         <label>Tipo de Hotspot:</label>
         <select id="hotspotTypeSelect" onchange="toggleHotspotModalFields()">
             <option value="scene">Passagem (Trocar de Cômodo)</option>
-            <option value="info">Informação / Link Externo</option>
+            <option value="info">Informação (Texto / Imagem / Link)</option>
         </select>
 
         <!-- Campos de Passagem -->
@@ -136,11 +124,17 @@
 
         <!-- Campos de Informação -->
         <div id="fieldInfoWrap" style="display: none;">
-            <label>Texto / Descrição do Balão:</label>
-            <textarea id="modalInfoText" rows="2" placeholder="ex: Acabamento em mármore importado"></textarea>
+            <label>Título ou Descrição:</label>
+            <input type="text" id="modalInfoText" placeholder="ex: Detalhe do Acabamento">
+
+            <label>Foto Sobreposta (escolha do repositório ou cole URL):</label>
+            <select id="modalInfoImageSelect" onchange="applySelectedImageToInput()">
+                <option value="">-- Nenhuma imagem selecionada --</option>
+            </select>
+            <input type="text" id="modalInfoImageUrl" placeholder="ou cole a URL direta da imagem aqui">
 
             <label>Link Externo (opcional):</label>
-            <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/5521999999999 ou link de site">
+            <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou página web">
         </div>
 
         <div class="modal-buttons">
@@ -148,6 +142,13 @@
             <button class="primary" style="margin-top:0;" onclick="confirmHotspot()">Salvar Ponto</button>
         </div>
     </div>
+</div>
+
+<!-- Visualizador Lightbox de Imagem Cheia -->
+<div id="lightbox-overlay" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Detalhe">
+    <div id="lightbox-caption"></div>
+    <span style="font-size: 11px; color: #aaa; margin-top: 6px;">(Clique em qualquer local para fechar)</span>
 </div>
 
 <script>
@@ -163,6 +164,7 @@
     var addPointMode = false;
     var isDragging = false;
     var startX = 0, startY = 0;
+    var availableRepoImages = [];
 
     window.addEventListener('load', function() {
         var repoUser = "mafiazeredo";
@@ -170,14 +172,24 @@
         fetch("https://api.github.com/repos/" + repoUser + "/" + repoName + "/contents/")
             .then(function(res) { return res.json(); })
             .then(function(files) {
-                var select = document.getElementById('repoPhotosSelect');
-                select.innerHTML = '<option value="">-- Selecione uma foto --</option>';
-                var images = files.filter(function(f) { return f.type === "file" && /\.(jpg|jpeg|png)$/i.test(f.name); });
-                images.forEach(function(img) {
-                    var opt = document.createElement('option');
-                    opt.value = img.name;
-                    opt.text = img.name;
-                    select.appendChild(opt);
+                availableRepoImages = files.filter(function(f) { return f.type === "file" && /\.(jpg|jpeg|png|webp)$/i.test(f.name); });
+                
+                var selectRepo = document.getElementById('repoPhotosSelect');
+                selectRepo.innerHTML = '<option value="">-- Selecione uma foto --</option>';
+                
+                var selectModalImg = document.getElementById('modalInfoImageSelect');
+                selectModalImg.innerHTML = '<option value="">-- Nenhuma foto vinculada --</option>';
+
+                availableRepoImages.forEach(function(img) {
+                    var opt1 = document.createElement('option');
+                    opt1.value = img.name;
+                    opt1.text = img.name;
+                    selectRepo.appendChild(opt1);
+
+                    var opt2 = document.createElement('option');
+                    opt2.value = img.name;
+                    opt2.text = img.name;
+                    selectModalImg.appendChild(opt2);
                 });
             })
             .catch(function() {
@@ -185,10 +197,9 @@
             });
     });
 
-    function toggleMediaType() {
-        var type = document.getElementById('mediaTypeSelect').value;
-        document.getElementById('boxEquirect').style.display = type === 'equirectangular' ? 'block' : 'none';
-        document.getElementById('boxMultires').style.display = type === 'multires' ? 'block' : 'none';
+    function applySelectedImageToInput() {
+        var val = document.getElementById('modalInfoImageSelect').value;
+        if (val) document.getElementById('modalInfoImageUrl').value = val;
     }
 
     function toggleHotspotModalFields() {
@@ -204,7 +215,7 @@
         if (addPointMode) {
             btn.classList.add('active');
             btn.innerText = '✓ Modo Marcar Ativo (Clique no local)';
-            document.getElementById('instructionText').innerText = '🎯 Clique no ponto exato onde deseja inserir a seta ou a informação.';
+            document.getElementById('instructionText').innerText = '🎯 Clique no ponto onde quer criar a passagem ou ponto de informação.';
         } else {
             btn.classList.remove('active');
             btn.innerText = '📍 Ativar Modo: Marcar Ponto';
@@ -213,39 +224,13 @@
     }
 
     function addPhotoToTour() {
-        var mediaType = document.getElementById('mediaTypeSelect').value;
-        var id = "", title = "", sceneConfig = {};
-
-        if (mediaType === 'equirectangular') {
-            var filename = document.getElementById('repoPhotosSelect').value;
-            if (!filename) return alert('Selecione uma foto na lista!');
-            id = filename.substring(0, filename.lastIndexOf('.')).toLowerCase();
-            title = id.charAt(0).toUpperCase() + id.slice(1);
-            sceneConfig = { "title": title, "type": "equirectangular", "panorama": filename, "hotSpots": [] };
-        } else {
-            var path = document.getElementById('multiresPath').value.trim();
-            if (!path) return alert('Informe o caminho da pasta multires!');
-            id = path.replace(/[\/\\]/g, '_').toLowerCase();
-            title = id.charAt(0).toUpperCase() + id.slice(1);
-            var configFile = document.getElementById('multiresConfigFile').value.trim();
-            
-            sceneConfig = {
-                "title": title,
-                "type": "multires",
-                "multiRes": configFile ? { "config": configFile } : {
-                    "path": path + "/%l/%s%y_%x",
-                    "fallbackPath": path + "/fallback/%s",
-                    "extension": "jpg",
-                    "tileResolution": 512,
-                    "maxLevel": 3,
-                    "cubeResolution": 2048
-                },
-                "hotSpots": []
-            };
-        }
+        var filename = document.getElementById('repoPhotosSelect').value;
+        if (!filename) return alert('Selecione uma foto na lista!');
+        var id = filename.substring(0, filename.lastIndexOf('.')).toLowerCase();
+        var title = id.charAt(0).toUpperCase() + id.slice(1);
 
         if (tourData.scenes[id]) return alert('Este ambiente já foi adicionado!');
-        tourData.scenes[id] = sceneConfig;
+        tourData.scenes[id] = { "title": title, "type": "equirectangular", "panorama": filename, "hotSpots": [] };
         if (!tourData.default.firstScene) tourData.default.firstScene = id;
 
         renderScenesList();
@@ -275,14 +260,72 @@
         }
     }
 
+    // Função de renderização para Hotspots com Suporte a Foto / Lightbox
+    function renderCustomHotspotTooltip(hotSpotDiv, args) {
+        hotSpotDiv.classList.add('custom-tooltip');
+        var container = document.createElement('div');
+        container.style.cssText = 'background: rgba(20,23,31,0.92); border: 1px solid #f5b301; padding: 8px 10px; border-radius: 6px; color: #fff; max-width: 220px; font-size: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);';
+
+        if (args.text) {
+            var title = document.createElement('div');
+            title.style.fontWeight = 'bold';
+            title.style.marginBottom = args.image ? '6px' : '0';
+            title.innerText = args.text;
+            container.appendChild(title);
+        }
+
+        if (args.image) {
+            var img = document.createElement('img');
+            img.src = args.image;
+            img.style.cssText = 'width: 100%; max-height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; display: block;';
+            img.onclick = function(e) {
+                e.stopPropagation();
+                openLightbox(args.image, args.text);
+            };
+            container.appendChild(img);
+        }
+
+        if (args.url) {
+            var link = document.createElement('a');
+            link.href = args.url;
+            link.target = '_blank';
+            link.style.cssText = 'display: inline-block; margin-top: 6px; color: #f5b301; text-decoration: underline; font-size: 11px;';
+            link.innerText = 'Abrir link';
+            container.appendChild(link);
+        }
+
+        hotSpotDiv.appendChild(container);
+    }
+
+    function openLightbox(src, caption) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox-caption').innerText = caption || '';
+        document.getElementById('lightbox-overlay').style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox-overlay').style.display = 'none';
+    }
+
     function rebuildViewer(targetSceneId) {
         currentSceneId = targetSceneId;
         renderScenesList();
         if (viewer) { viewer.destroy(); viewer = null; }
 
+        // Clona e anexa o handler dinâmico de exibição caso tenha imagem
+        var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
+        for (var sc in cleanScenes) {
+            cleanScenes[sc].hotSpots.forEach(function(sp) {
+                if (sp.type === 'info' && (sp.image || sp.text)) {
+                    sp.createTooltipFunc = renderCustomHotspotTooltip;
+                    sp.createTooltipArgs = { text: sp.text, image: sp.image, url: sp.URL };
+                }
+            });
+        }
+
         viewer = pannellum.viewer('panorama', {
             "default": tourData.default,
-            "scenes": tourData.scenes
+            "scenes": cleanScenes
         });
 
         viewer.loadScene(targetSceneId);
@@ -321,6 +364,9 @@
         document.getElementById('hotspotTypeSelect').value = otherScenes.length > 0 ? 'scene' : 'info';
         toggleHotspotModalFields();
         updateDefaultText();
+        document.getElementById('modalInfoText').value = '';
+        document.getElementById('modalInfoImageUrl').value = '';
+        document.getElementById('modalInfoUrl').value = '';
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
@@ -366,8 +412,10 @@
             spotObj.targetYaw = tempTargetYaw;
         } else {
             spotObj.text = document.getElementById('modalInfoText').value || 'Informação';
-            var url = document.getElementById('modalInfoUrl').value.trim();
-            if (url) spotObj.URL = url;
+            var imgUrl = document.getElementById('modalInfoImageUrl').value.trim();
+            if (imgUrl) spotObj.image = imgUrl;
+            var linkUrl = document.getElementById('modalInfoUrl').value.trim();
+            if (linkUrl) spotObj.URL = linkUrl;
         }
 
         tourData.scenes[currentSceneId].hotSpots.push(spotObj);
@@ -380,7 +428,7 @@
         var area = document.getElementById('finalCodeArea');
         area.value = JSON.stringify(tourData, null, 4);
         area.style.display = 'block';
-        alert('Configuração final do tour gerada com sucesso!');
+        alert('Código final do tour gerado com sucesso!');
     }
 </script>
 </body>
