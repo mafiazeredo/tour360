@@ -3,78 +3,101 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Construtor de Tour 360</title>
+    <title>Criador de Tour 360</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: sans-serif; }
-        #sidebar { width: 350px; background: #1f242d; color: #fff; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #12151b; color: #fff; }
+        #sidebar { width: 360px; background: #1a1e26; border-right: 1px solid #2d3442; display: flex; flex-direction: column; }
+        #sidebar-header { padding: 18px; border-bottom: 1px solid #2d3442; }
+        #sidebar-header h1 { font-size: 18px; margin: 0 0 6px 0; color: #f5b301; }
+        #sidebar-header p { font-size: 12px; color: #8c97a8; margin: 0; }
+        #sidebar-content { padding: 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
         #panorama { flex: 1; height: 100%; position: relative; }
-        h2, h3 { margin: 0 0 5px 0; font-size: 16px; color: #f5b301; }
-        .box { background: #2a313d; padding: 10px; border-radius: 6px; }
-        label { display: block; font-size: 12px; margin-top: 6px; color: #bbb; }
-        input, select, button { width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #444; background: #16191f; color: #fff; font-size: 13px; }
-        button { background: #f5b301; color: #000; font-weight: bold; cursor: pointer; border: none; margin-top: 8px; }
-        button:hover { background: #e0a200; }
-        .btn-sec { background: #3b4252; color: #fff; border: 1px solid #555; }
-        .btn-sec:hover { background: #4c566a; }
-        textarea { width: 100%; height: 130px; background: #111; color: #0f0; font-family: monospace; font-size: 11px; padding: 6px; border: 1px solid #444; margin-top: 8px; }
-        .info { font-size: 12px; color: #8bc34a; line-height: 1.4; }
+        
+        .card { background: #222834; border: 1px solid #2e3748; border-radius: 8px; padding: 14px; }
+        .card-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #e1e7f0; display: flex; align-items: center; gap: 8px; }
+        .step-number { background: #f5b301; color: #000; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        
+        select, input, button { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #3b4457; background: #14171f; color: #fff; font-size: 13px; margin-top: 6px; }
+        button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        button.primary:hover { background: #e0a200; }
+        
+        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+        .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
+        .badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
+        
+        #instruction-banner { position: absolute; top: 16px; left: 16px; right: 16px; background: rgba(20, 23, 31, 0.92); border: 1px solid #f5b301; padding: 12px 18px; border-radius: 8px; z-index: 100; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(4px); }
+        #instruction-banner span { font-size: 14px; font-weight: 500; }
+        
+        /* Modal flutuante */
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
+        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 340px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #modal-box h3 { margin: 0 0 10px 0; font-size: 16px; color: #f5b301; }
+        .modal-buttons { display: flex; gap: 8px; margin-top: 14px; }
+        .btn-cancel { background: #3b4457; color: #fff; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2>Construtor de Tour 360</h2>
-    
-    <div class="box">
-        <h3>1. Cenas (Ambientes)</h3>
-        <label>Selecione a Imagem do Repositório:</label>
-        <select id="sceneFile">
-            <option value="">Carregando arquivos do GitHub...</option>
-        </select>
-        <label>ID da Cena (ex: banheiro):</label>
-        <input type="text" id="sceneId" placeholder="ex: banheiro">
-        <label>Título amigável:</label>
-        <input type="text" id="sceneTitle" placeholder="ex: Banheiro Social">
-        <button onclick="addScene()">Adicionar Cena</button>
-        
-        <label style="margin-top: 12px;">Trocar para Cena:</label>
-        <select id="selectCurrentScene" onchange="switchScene()"></select>
+    <div id="sidebar-header">
+        <h1>Criador de Tour 360</h1>
+        <p>Monte o tour de forma 100% visual e intuitiva.</p>
     </div>
 
-    <div class="box">
-        <h3>2. Posicionar Ponto (Hotspot)</h3>
-        <p class="info">1º Clique na imagem onde a seta deve ficar.</p>
-        <label>Pitch (Vertical):</label>
-        <input type="text" id="spotPitch" readonly>
-        <label>Yaw (Horizontal):</label>
-        <input type="text" id="spotYaw" readonly>
-        
-        <label>Leva para qual ambiente?:</label>
-        <select id="spotTargetScene"></select>
-        
-        <label>Texto da Seta:</label>
-        <input type="text" id="spotText" placeholder="ex: Ir para o Corredor">
-        
-        <label>Ângulo de entrada no destino:</label>
-        <input type="number" id="spotTargetYaw" value="0" readonly>
-        
-        <button type="button" class="btn-sec" onclick="previewAndAlignTarget()">1. Olhar ambiente de destino</button>
-        <button type="button" class="btn-sec" onclick="captureCurrentYaw()">2. Usar esta visão como entrada</button>
-        
-        <button onclick="addHotspot()" style="margin-top: 14px;">Salvar Ponto de Passagem</button>
-    </div>
+    <div id="sidebar-content">
+        <!-- Passo 1: Fotos do Tour -->
+        <div class="card">
+            <div class="card-title">
+                <span class="step-number">1</span>
+                Ambientes do Tour
+            </div>
+            <label style="font-size: 12px; color: #8c97a8;">Escolha fotos do repositório para incluir:</label>
+            <select id="repoPhotosSelect">
+                <option value="">Carregando fotos do GitHub...</option>
+            </select>
+            <button class="primary" onclick="addPhotoToTour()">+ Adicionar este Cômodo</button>
+            
+            <div style="margin-top: 14px;" id="tourScenesList"></div>
+        </div>
 
-    <div class="box">
-        <h3>3. Exportar Tour</h3>
-        <button onclick="exportConfig()">Gerar Código Final</button>
-        <textarea id="output" readonly placeholder="O código do tour configurado aparecerá aqui..."></textarea>
+        <!-- Passo 2: Exportar -->
+        <div class="card">
+            <div class="card-title">
+                <span class="step-number">2</span>
+                Finalizar e Publicar
+            </div>
+            <p style="font-size: 12px; color: #8c97a8; margin: 0 0 8px 0;">Quando terminar de ligar os cômodos, clique para gerar o código final.</p>
+            <button class="primary" onclick="generateFinalCode()">Concluir Tour</button>
+            <textarea id="finalCodeArea" style="display:none; width: 100%; height: 120px; margin-top: 10px; background: #14171f; color: #00e676; border: 1px solid #2e3748; border-radius: 6px; padding: 8px; font-family: monospace; font-size: 11px;"></textarea>
+        </div>
     </div>
 </div>
 
-<div id="panorama"></div>
+<div id="panorama">
+    <div id="instruction-banner">
+        <span id="instructionText">Adicione o primeiro cômodo no menu ao lado para começar.</span>
+    </div>
+</div>
+
+<!-- Modal Flutuante para Conectar Ambientes -->
+<div id="modal-overlay">
+    <div id="modal-box">
+        <h3>Criar Passagem de Ambiente</h3>
+        <label style="font-size: 12px; color: #8c97a8;">Para qual cômodo essa passagem deve levar?</label>
+        <select id="modalTargetScene"></select>
+        
+        <label style="font-size: 12px; color: #8c97a8; margin-top: 10px; display: block;">Texto da seta:</label>
+        <input type="text" id="modalText" placeholder="ex: Ir para o Corredor">
+        
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+            <button class="primary" style="margin-top:0;" onclick="confirmHotspot()">Salvar Conexão</button>
+        </div>
+    </div>
+</div>
 
 <script>
     var tourData = {
@@ -83,163 +106,148 @@
     };
 
     var viewer = null;
-    var currentScene = "";
+    var currentSceneId = "";
+    var tempCoords = null;
 
+    // Busca automática das imagens no repositório
     window.addEventListener('load', function() {
         var repoUser = "mafiazeredo";
         var repoName = "tour360";
-        var apiUrl = "https://api.github.com/repos/" + repoUser + "/" + repoName + "/contents/";
-
-        fetch(apiUrl)
+        fetch("https://api.github.com/repos/" + repoUser + "/" + repoName + "/contents/")
             .then(function(res) { return res.json(); })
             .then(function(files) {
-                var select = document.getElementById('sceneFile');
-                select.innerHTML = '<option value="">-- Escolha uma imagem --</option>';
-                
-                var imageFiles = files.filter(function(item) {
-                    return item.type === "file" && /\.(jpg|jpeg|png)$/i.test(item.name);
-                });
-
-                imageFiles.forEach(function(item) {
+                var select = document.getElementById('repoPhotosSelect');
+                select.innerHTML = '<option value="">-- Selecione uma foto --</option>';
+                var images = files.filter(function(f) { return f.type === "file" && /\.(jpg|jpeg|png)$/i.test(f.name); });
+                images.forEach(function(img) {
                     var opt = document.createElement('option');
-                    opt.value = item.name;
-                    opt.text = item.name;
+                    opt.value = img.name;
+                    opt.text = img.name;
                     select.appendChild(opt);
                 });
-
-                select.onchange = function() {
-                    var val = select.value;
-                    if (val) {
-                        var baseName = val.substring(0, val.lastIndexOf('.')) || val;
-                        document.getElementById('sceneId').value = baseName;
-                        document.getElementById('sceneTitle').value = baseName.charAt(0).toUpperCase() + baseName.slice(1);
-                    }
-                };
             })
             .catch(function() {
-                var select = document.getElementById('sceneFile');
-                select.innerHTML = '<option value="">Erro ao carregar lista de arquivos</option>';
+                document.getElementById('repoPhotosSelect').innerHTML = '<option value="">Erro ao buscar arquivos</option>';
             });
     });
 
-    function initViewer(firstSceneId) {
-        if (viewer) viewer.destroy();
-        viewer = pannellum.viewer('panorama', {
-            "default": tourData.default,
-            "scenes": tourData.scenes,
-            "hotSpotDebug": true
-        });
+    function addPhotoToTour() {
+        var filename = document.getElementById('repoPhotosSelect').value;
+        if (!filename) return alert('Selecione uma foto da lista!');
 
-        viewer.on('load', function() {
-            var el = document.getElementById('panorama');
-            el.onclick = function(e) {
-                var coords = viewer.mouseEventToCoords(e);
-                if (coords && coords.length >= 2) {
-                    document.getElementById('spotPitch').value = coords[0].toFixed(2);
-                    document.getElementById('spotYaw').value = coords[1].toFixed(2);
-                }
-            };
-        });
+        var id = filename.substring(0, filename.lastIndexOf('.')).toLowerCase();
+        var title = id.charAt(0).toUpperCase() + id.slice(1);
 
-        viewer.loadScene(firstSceneId);
-        currentScene = firstSceneId;
-    }
-
-    function addScene() {
-        var id = document.getElementById('sceneId').value.trim();
-        var title = document.getElementById('sceneTitle').value.trim();
-        var file = document.getElementById('sceneFile').value.trim();
-
-        if (!file) { alert('Selecione uma imagem na lista!'); return; }
-        if (!id) { alert('Informe o ID da cena!'); return; }
+        if (tourData.scenes[id]) return alert('Este cômodo já está no tour!');
 
         tourData.scenes[id] = {
-            "title": title || id,
+            "title": title,
             "type": "equirectangular",
-            "panorama": file,
+            "panorama": filename,
             "hotSpots": []
         };
 
         if (!tourData.default.firstScene) tourData.default.firstScene = id;
 
-        updateSceneDropdowns();
-        initViewer(id);
+        renderScenesList();
+        loadSceneInViewer(id);
     }
 
-    function updateSceneDropdowns() {
-        var selCurrent = document.getElementById('selectCurrentScene');
-        var selTarget = document.getElementById('spotTargetScene');
-        selCurrent.innerHTML = '';
-        selTarget.innerHTML = '';
-
-        for (var key in tourData.scenes) {
-            var opt1 = document.createElement('option');
-            opt1.value = key;
-            opt1.text = tourData.scenes[key].title + " (" + key + ")";
-            selCurrent.appendChild(opt1);
-
-            var opt2 = document.createElement('option');
-            opt2.value = key;
-            opt2.text = tourData.scenes[key].title + " (" + key + ")";
-            selTarget.appendChild(opt2);
-        }
-        selCurrent.value = currentScene;
-    }
-
-    function switchScene() {
-        var target = document.getElementById('selectCurrentScene').value;
-        if (viewer && target) {
-            currentScene = target;
-            viewer.loadScene(target);
+    function renderScenesList() {
+        var container = document.getElementById('tourScenesList');
+        container.innerHTML = '<label style="font-size:12px; color:#8c97a8; display:block; margin-bottom:6px;">Cômodos no Tour (clique para alternar):</label>';
+        
+        for (var id in tourData.scenes) {
+            var chip = document.createElement('div');
+            chip.className = 'photo-chip' + (id === currentSceneId ? ' active' : '');
+            chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' passagens</span>';
+            chip.onclick = (function(sceneId) {
+                return function() { loadSceneInViewer(sceneId); };
+            })(id);
+            container.appendChild(chip);
         }
     }
 
-    // Leva para o cômodo de destino para girar e alinhar visualmente
-    function previewAndAlignTarget() {
-        var target = document.getElementById('spotTargetScene').value;
-        if (!target) {
-            alert('Selecione o ambiente de destino primeiro!');
-            return;
+    function loadSceneInViewer(sceneId) {
+        currentSceneId = sceneId;
+        renderScenesList();
+
+        if (!viewer) {
+            viewer = pannellum.viewer('panorama', {
+                "default": tourData.default,
+                "scenes": tourData.scenes
+            });
+        } else {
+            viewer.destroy();
+            viewer = pannellum.viewer('panorama', {
+                "default": tourData.default,
+                "scenes": tourData.scenes
+            });
         }
-        viewer.loadScene(target);
+
+        viewer.loadScene(sceneId);
+
+        document.getElementById('instructionText').innerText = '👉 Você está em "' + tourData.scenes[sceneId].title + '". Clique em uma porta ou no chão para criar uma seta de passagem.';
+
+        // Captura o clique direto na imagem
+        viewer.on('load', function() {
+            var el = document.getElementById('panorama');
+            el.onclick = function(e) {
+                var coords = viewer.mouseEventToCoords(e);
+                if (coords && coords.length >= 2) {
+                    tempCoords = coords;
+                    openModal();
+                }
+            };
+        });
     }
 
-    // Captura o ângulo exato em que a câmera está parada
-    function captureCurrentYaw() {
-        if (!viewer) return;
-        var currentYaw = viewer.getYaw();
-        document.getElementById('spotTargetYaw').value = Math.round(currentYaw);
-        alert('Ângulo capturado: ' + Math.round(currentYaw) + '°. Retornando para a cena anterior para concluir o ponto...');
-        viewer.loadScene(currentScene);
-    }
-
-    function addHotspot() {
-        var pitch = parseFloat(document.getElementById('spotPitch').value);
-        var yaw = parseFloat(document.getElementById('spotYaw').value);
-        var target = document.getElementById('spotTargetScene').value;
-        var text = document.getElementById('spotText').value || "Acessar ambiente";
-        var targetYaw = parseFloat(document.getElementById('spotTargetYaw').value) || 0;
-
-        if (isNaN(pitch) || isNaN(yaw)) {
-            alert('Clique na imagem 360 para capturar o ponto onde a seta deve ficar!');
+    function openModal() {
+        var otherScenes = Object.keys(tourData.scenes).filter(function(id) { return id !== currentSceneId; });
+        if (otherScenes.length === 0) {
+            alert('Adicione pelo menos mais um cômodo no Passo 1 para poder ligar este a outro!');
             return;
         }
 
-        tourData.scenes[currentScene].hotSpots.push({
-            "pitch": pitch,
-            "yaw": yaw,
-            "type": "scene",
-            "text": text,
-            "sceneId": target,
-            "targetYaw": targetYaw
+        var select = document.getElementById('modalTargetScene');
+        select.innerHTML = '';
+        otherScenes.forEach(function(id) {
+            var opt = document.createElement('option');
+            opt.value = id;
+            opt.text = tourData.scenes[id].title;
+            select.appendChild(opt);
         });
 
-        initViewer(currentScene);
-        alert('Ponto salvo com sucesso!');
+        document.getElementById('modalText').value = 'Ir para ' + tourData.scenes[otherScenes[0]].title;
+        document.getElementById('modal-overlay').style.display = 'flex';
     }
 
-    function exportConfig() {
-        document.getElementById('output').value = JSON.stringify(tourData, null, 4);
+    function closeModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        tempCoords = null;
+    }
+
+    function confirmHotspot() {
+        var targetSceneId = document.getElementById('modalTargetScene').value;
+        var text = document.getElementById('modalText').value || 'Avançar';
+
+        tourData.scenes[currentSceneId].hotSpots.push({
+            "pitch": parseFloat(tempCoords[0].toFixed(2)),
+            "yaw": parseFloat(tempCoords[1].toFixed(2)),
+            "type": "scene",
+            "text": text,
+            "sceneId": targetSceneId
+        });
+
+        closeModal();
+        loadSceneInViewer(currentSceneId);
+    }
+
+    function generateFinalCode() {
+        var area = document.getElementByIdFinalCodeArea ? document.getElementByIdFinalCodeArea : document.getElementById('finalCodeArea');
+        area.value = JSON.stringify(tourData, null, 4);
+        area.style.display = 'block';
+        alert('Tour configurado com sucesso! O código de configuração foi gerado no campo abaixo.');
     }
 </script>
 </body>
