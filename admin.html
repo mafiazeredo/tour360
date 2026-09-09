@@ -14,7 +14,7 @@
 
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #12151b; color: #fff; }
-        #sidebar { width: 360px; background: #1a1e26; border-right: 1px solid #2d3442; display: flex; flex-direction: column; }
+        #sidebar { width: 370px; background: #1a1e26; border-right: 1px solid #2d3442; display: flex; flex-direction: column; }
         #sidebar-header { padding: 16px; border-bottom: 1px solid #2d3442; }
         #sidebar-header h1 { font-size: 18px; margin: 0 0 4px 0; color: #f5b301; }
         #sidebar-header p { font-size: 12px; color: #8c97a8; margin: 0; }
@@ -33,6 +33,9 @@
         button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 8px; }
         button.primary:hover { background: #e0a200; }
         
+        button.secondary { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; font-weight: 500; margin-top: 6px; }
+        button.secondary:hover { background: #3b4457; }
+
         button.tool-btn { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; font-weight: 500; }
         button.tool-btn.active { background: #10b981; border-color: #059669; color: #fff; }
         
@@ -40,10 +43,14 @@
         .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
         .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
         
+        /* Lista de Hotspots para Gerenciar/Excluir */
+        .hotspot-item { display: flex; justify-content: space-between; align-items: center; background: #14171f; border: 1px solid #2e3748; border-radius: 5px; padding: 6px 8px; margin-top: 6px; font-size: 11px; }
+        .btn-delete { width: auto; padding: 3px 8px; background: #ef4444; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
+        .btn-delete:hover { background: #dc2626; }
+
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
-        /* Modal Flutuante */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
         #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 400px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
@@ -56,7 +63,6 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* CÍRCULO NATIVO LIMPO E VISÍVEL */
         .spot-circle {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -77,12 +83,10 @@
             background: #ffffff !important;
         }
 
-        /* Esconde apenas o balãozinho de texto, mantendo o círculo perfeitamente desenhado */
         .spot-circle span {
             display: none !important;
         }
 
-        /* Lightbox de imagem cheia */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -121,6 +125,14 @@
     </div>
 
     <div id="sidebar-content">
+        <!-- Salvar e Carregar Tour -->
+        <div class="card">
+            <div class="card-title">💾 Arquivo do Tour</div>
+            <button class="secondary" onclick="exportTourFile()">⬇ Salvar Tour em Arquivo (.json)</button>
+            <label style="margin-top:8px;">Abrir Tour existente do computador:</label>
+            <input type="file" id="loadTourFileInput" accept=".json" onchange="importTourFile(event)">
+        </div>
+
         <!-- Passo 1: Cenas -->
         <div class="card">
             <div class="card-title"><span class="step-number">1</span> Ambientes (Cenas)</div>
@@ -137,12 +149,18 @@
             <div class="card-title"><span class="step-number">2</span> Hotspots Interativos</div>
             <p style="font-size: 11px; color: #8c97a8; margin: 0 0 6px 0;">Arraste para girar. Ative o botão quando for clicar no local exato.</p>
             <button id="addPointModeBtn" class="tool-btn" onclick="toggleAddPointMode()">📍 Ativar Modo: Marcar Ponto</button>
+
+            <!-- Lista de Hotspots do Cômodo Ativo para Exclusão -->
+            <div style="margin-top: 12px;">
+                <label style="color:#e1e7f0; font-weight:bold;">Pontos criados neste ambiente:</label>
+                <div id="activeSceneHotspotsList"></div>
+            </div>
         </div>
 
-        <!-- Passo 3: Exportar -->
+        <!-- Passo 3: Exportar Código -->
         <div class="card">
-            <div class="card-title"><span class="step-number">3</span> Finalizar Tour</div>
-            <button class="primary" onclick="generateFinalCode()">Concluir Tour</button>
+            <div class="card-title"><span class="step-number">3</span> Gerar Código</div>
+            <button class="primary" onclick="generateFinalCode()">Gerar Código JSON</button>
             <textarea id="finalCodeArea" style="display:none; width: 100%; height: 110px; margin-top: 8px; background: #14171f; color: #00e676; border: 1px solid #2e3748; border-radius: 6px; padding: 6px; font-family: monospace; font-size: 11px;"></textarea>
         </div>
     </div>
@@ -150,7 +168,7 @@
 
 <div id="panorama-wrap">
     <div id="panorama"></div>
-    <div id="instruction-banner"><span id="instructionText">Adicione um ambiente no menu à esquerda para começar.</span></div>
+    <div id="instruction-banner"><span id="instructionText">Adicione um ambiente ou carregue um tour para começar.</span></div>
     <div id="align-banner">
         <p>🔄 Gire até olhar para o ponto de entrada deste ambiente.</p>
         <button onclick="confirmTargetYaw()">✓ Salvar esta direção</button>
@@ -285,6 +303,43 @@
             });
     });
 
+    // Salvar e Carregar Tour em arquivo .json local
+    function exportTourFile() {
+        if (Object.keys(tourData.scenes).length === 0) {
+            return alert('Nenhum ambiente foi adicionado ao tour ainda!');
+        }
+        var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tourData, null, 4));
+        var downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "tour_config.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importTourFile(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                var loadedData = JSON.parse(evt.target.result);
+                if (loadedData.scenes && loadedData.default) {
+                    tourData = loadedData;
+                    var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
+                    renderScenesList();
+                    if (firstScene) rebuildViewer(firstScene);
+                    alert('Tour carregado com sucesso!');
+                } else {
+                    alert('Formato de arquivo inválido!');
+                }
+            } catch (err) {
+                alert('Erro ao ler o arquivo JSON.');
+            }
+        };
+        reader.readAsText(file);
+    }
+
     function applySelectedRepoImage() {
         var val = document.getElementById('modalInfoImageSelect').value;
         if (val) {
@@ -360,9 +415,41 @@
         }
     }
 
+    // Renderiza a lista de pontos do ambiente ativo com opção de exclusão
+    function renderActiveSceneHotspots() {
+        var container = document.getElementById('activeSceneHotspotsList');
+        if (!currentSceneId || !tourData.scenes[currentSceneId]) {
+            container.innerHTML = '<span style="font-size:11px; color:#8c97a8;">Nenhum ambiente selecionado.</span>';
+            return;
+        }
+
+        var spots = tourData.scenes[currentSceneId].hotSpots;
+        if (spots.length === 0) {
+            container.innerHTML = '<span style="font-size:11px; color:#8c97a8;">Nenhum ponto criado nesta cena.</span>';
+            return;
+        }
+
+        container.innerHTML = '';
+        spots.forEach(function(spot, index) {
+            var item = document.createElement('div');
+            item.className = 'hotspot-item';
+            
+            var label = spot.type === 'scene' ? '🚪 ' + (spot.text || 'Passagem') : 'ℹ️ ' + (spot.text || 'Info');
+            item.innerHTML = '<span>' + label + '</span><button class="btn-delete" onclick="deleteHotspot(' + index + ')">Excluir</button>';
+            container.appendChild(item);
+        });
+    }
+
+    function deleteHotspot(index) {
+        if (!currentSceneId || !tourData.scenes[currentSceneId]) return;
+        tourData.scenes[currentSceneId].hotSpots.splice(index, 1);
+        rebuildViewer(currentSceneId);
+    }
+
     function switchSceneView(sceneId) {
         currentSceneId = sceneId;
         renderScenesList();
+        renderActiveSceneHotspots();
         if (viewer) {
             viewer.loadScene(sceneId);
             document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
@@ -382,11 +469,11 @@
     function rebuildViewer(targetSceneId) {
         currentSceneId = targetSceneId;
         renderScenesList();
+        renderActiveSceneHotspots();
         if (viewer) { viewer.destroy(); viewer = null; }
 
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
         
-        // Aplica o círculo visível em todos os pontos e configura ação direta
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
                 sp.cssClass = 'spot-circle';
@@ -512,7 +599,7 @@
         var area = document.getElementById('finalCodeArea');
         area.value = JSON.stringify(tourData, null, 4);
         area.style.display = 'block';
-        alert('Configuração final gerada com sucesso!');
+        alert('Código gerado no campo abaixo!');
     }
 </script>
 </body>
