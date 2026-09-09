@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Construtor de Tour 360</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: sans-serif; }
+        #sidebar { width: 340px; background: #1f242d; color: #fff; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        #panorama { flex: 1; height: 100%; position: relative; }
+        h2, h3 { margin: 0 0 5px 0; font-size: 16px; color: #f5b301; }
+        .box { background: #2a313d; padding: 10px; border-radius: 6px; }
+        label { display: block; font-size: 12px; margin-top: 6px; color: #bbb; }
+        input, select, button { width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #444; background: #16191f; color: #fff; font-size: 13px; }
+        button { background: #f5b301; color: #000; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; }
+        button:hover { background: #e0a200; }
+        .btn-del { background: #d9534f; color: #fff; margin-top: 5px; }
+        .btn-del:hover { background: #c9302c; }
+        textarea { width: 100%; height: 140px; background: #111; color: #0f0; font-family: monospace; font-size: 11px; padding: 6px; border: 1px solid #444; margin-top: 8px; }
+        .info { font-size: 12px; color: #8bc34a; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Construtor de Tour 360</h2>
+    
+    <div class="box">
+        <h3>1. Cenas (Ambientes)</h3>
+        <label>ID da Cena (ex: banheiro):</label>
+        <input type="text" id="sceneId" placeholder="ex: banheiro">
+        <label>Título amigável:</label>
+        <input type="text" id="sceneTitle" placeholder="ex: Banheiro Social">
+        <label>Nome do arquivo JPG:</label>
+        <input type="text" id="sceneFile" placeholder="ex: banheiro.jpg">
+        <button onclick="addScene()">Adicionar Cena</button>
+        
+        <label style="margin-top: 12px;">Trocar para Cena:</label>
+        <select id="selectCurrentScene" onchange="switchScene()"></select>
+    </div>
+
+    <div class="box">
+        <h3>2. Posicionar Ponto (Hotspot)</h3>
+        <p class="info">Clique em qualquer local na imagem 360 à direita para marcar o ponto de passagem.</p>
+        <label>Pitch (Vertical):</label>
+        <input type="text" id="spotPitch" readonly>
+        <label>Yaw (Horizontal):</label>
+        <input type="text" id="spotYaw" readonly>
+        <label>Leva para qual ambiente?:</label>
+        <select id="spotTargetScene"></select>
+        <label>Texto da Seta:</label>
+        <input type="text" id="spotText" placeholder="ex: Ir para o Corredor">
+        <label>Ângulo ao entrar (Target Yaw):</label>
+        <input type="number" id="spotTargetYaw" value="0">
+        <button onclick="addHotspot()">Salvar Ponto nesta Cena</button>
+    </div>
+
+    <div class="box">
+        <h3>3. Exportar Tour</h3>
+        <p class="info">Gera a configuração final para rodar no site do cliente.</p>
+        <button onclick="exportConfig()">Gerar Código Final</button>
+        <textarea id="output" readonly placeholder="O código do tour configurado aparecerá aqui..."></textarea>
+    </div>
+</div>
+
+<div id="panorama"></div>
+
+<script>
+    var tourData = {
+        "default": { "firstScene": "", "autoLoad": true, "sceneFadeDuration": 800 },
+        "scenes": {}
+    };
+
+    var viewer = null;
+    var currentScene = "";
+
+    function initViewer(firstSceneId) {
+        if (viewer) viewer.destroy();
+        viewer = pannellum.viewer('panorama', {
+            "default": tourData.default,
+            "scenes": tourData.scenes,
+            "hotSpotDebug": true
+        });
+
+        viewer.on('load', function() {
+            var el = document.getElementById('panorama');
+            el.onclick = function(e) {
+                var coords = viewer.mouseEventToCoords(e);
+                if (coords && coords.length >= 2) {
+                    document.getElementById('spotPitch').value = coords[0].toFixed(2);
+                    document.getElementById('spotYaw').value = coords[1].toFixed(2);
+                }
+            };
+        });
+
+        viewer.loadScene(firstSceneId);
+        currentScene = firstSceneId;
+    }
+
+    function addScene() {
+        var id = document.getElementById('sceneId').value.trim();
+        var title = document.getElementById('sceneTitle').value.trim();
+        var file = document.getElementById('sceneFile').value.trim();
+
+        if (!id || !file) { alert('Informe ID e nome do arquivo JPG!'); return; }
+
+        tourData.scenes[id] = {
+            "title": title || id,
+            "type": "equirectangular",
+            "panorama": file,
+            "hotSpots": []
+        };
+
+        if (!tourData.default.firstScene) tourData.default.firstScene = id;
+
+        updateSceneDropdowns();
+        initViewer(id);
+
+        document.getElementById('sceneId').value = '';
+        document.getElementById('sceneTitle').value = '';
+        document.getElementById('sceneFile').value = '';
+    }
+
+    function updateSceneDropdowns() {
+        var selCurrent = document.getElementById('selectCurrentScene');
+        var selTarget = document.getElementById('spotTargetScene');
+        selCurrent.innerHTML = '';
+        selTarget.innerHTML = '';
+
+        for (var key in tourData.scenes) {
+            var opt1 = document.createElement('option');
+            opt1.value = key;
+            opt1.text = tourData.scenes[key].title + " (" + key + ")";
+            selCurrent.appendChild(opt1);
+
+            var opt2 = document.createElement('option');
+            opt2.value = key;
+            opt2.text = tourData.scenes[key].title + " (" + key + ")";
+            selTarget.appendChild(opt2);
+        }
+        selCurrent.value = currentScene;
+    }
+
+    function switchScene() {
+        var target = document.getElementById('selectCurrentScene').value;
+        if (viewer && target) {
+            currentScene = target;
+            viewer.loadScene(target);
+        }
+    }
+
+    function addHotspot() {
+        var pitch = parseFloat(document.getElementById('spotPitch').value);
+        var yaw = parseFloat(document.getElementById('spotYaw').value);
+        var target = document.getElementById('spotTargetScene').value;
+        var text = document.getElementById('spotText').value || "Acessar ambiente";
+        var targetYaw = parseFloat(document.getElementById('spotTargetYaw').value) || 0;
+
+        if (isNaN(pitch) || isNaN(yaw)) {
+            alert('Clique em algum ponto da imagem 360 para capturar as coordenadas primeiro!');
+            return;
+        }
+
+        tourData.scenes[currentScene].hotSpots.push({
+            "pitch": pitch,
+            "yaw": yaw,
+            "type": "scene",
+            "text": text,
+            "sceneId": target,
+            "targetYaw": targetYaw
+        });
+
+        initViewer(currentScene);
+        alert('Ponto adicionado com sucesso!');
+    }
+
+    function exportConfig() {
+        document.getElementById('output').value = JSON.stringify(tourData, null, 4);
+    }
+</script>
+</body>
+</html>
