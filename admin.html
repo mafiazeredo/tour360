@@ -24,7 +24,10 @@
         button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button.primary:hover { background: #e0a200; }
         
-        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+        button.tool-btn { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; }
+        button.tool-btn.active { background: #10b981; border-color: #059669; color: #fff; }
+        
+        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; cursor: pointer; }
         .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
         .badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
         
@@ -44,7 +47,7 @@
 <div id="sidebar">
     <div id="sidebar-header">
         <h1>Criador de Tour 360</h1>
-        <p>Monte o tour de forma 100% visual e intuitiva.</p>
+        <p>Ambiente administrativo visual</p>
     </div>
 
     <div id="sidebar-content">
@@ -54,7 +57,7 @@
                 <span class="step-number">1</span>
                 Ambientes do Tour
             </div>
-            <label style="font-size: 12px; color: #8c97a8;">Escolha fotos do repositório para incluir:</label>
+            <label style="font-size: 12px; color: #8c97a8;">Escolha fotos do repositório:</label>
             <select id="repoPhotosSelect">
                 <option value="">Carregando fotos do GitHub...</option>
             </select>
@@ -63,13 +66,22 @@
             <div style="margin-top: 14px;" id="tourScenesList"></div>
         </div>
 
-        <!-- Passo 2: Exportar -->
+        <!-- Passo 2: Ferramenta de Conexão -->
         <div class="card">
             <div class="card-title">
                 <span class="step-number">2</span>
-                Finalizar e Publicar
+                Passagens / Conexões
             </div>
-            <p style="font-size: 12px; color: #8c97a8; margin: 0 0 8px 0;">Quando terminar de ligar os cômodos, clique para gerar o código final.</p>
+            <p style="font-size: 12px; color: #8c97a8; margin: 0 0 8px 0;">Para girar livremente sem marcar ponto, deixe desativado. Ative apenas quando for clicar na porta.</p>
+            <button id="addPointModeBtn" class="tool-btn" onclick="toggleAddPointMode()">📍 Ativar Modo: Marcar Ponto</button>
+        </div>
+
+        <!-- Passo 3: Exportar -->
+        <div class="card">
+            <div class="card-title">
+                <span class="step-number">3</span>
+                Finalizar Tour
+            </div>
             <button class="primary" onclick="generateFinalCode()">Concluir Tour</button>
             <textarea id="finalCodeArea" style="display:none; width: 100%; height: 120px; margin-top: 10px; background: #14171f; color: #00e676; border: 1px solid #2e3748; border-radius: 6px; padding: 8px; font-family: monospace; font-size: 11px;"></textarea>
         </div>
@@ -78,7 +90,7 @@
 
 <div id="panorama">
     <div id="instruction-banner">
-        <span id="instructionText">Adicione o primeiro cômodo no menu ao lado para começar.</span>
+        <span id="instructionText">Adicione um cômodo no menu à esquerda para iniciar.</span>
     </div>
 </div>
 
@@ -108,8 +120,10 @@
     var viewer = null;
     var currentSceneId = "";
     var tempCoords = null;
+    var addPointMode = false;
+    var isDragging = false;
+    var startX = 0, startY = 0;
 
-    // Busca automática das imagens no repositório
     window.addEventListener('load', function() {
         var repoUser = "mafiazeredo";
         var repoName = "tour360";
@@ -127,9 +141,24 @@
                 });
             })
             .catch(function() {
-                document.getElementById('repoPhotosSelect').innerHTML = '<option value="">Erro ao buscar arquivos</option>';
+                document.getElementById('repoPhotosSelect').innerHTML = '<option value="">Erro ao carregar lista</option>';
             });
     });
+
+    function toggleAddPointMode() {
+        if (!currentSceneId) return alert('Adicione ou selecione um cômodo primeiro!');
+        addPointMode = !addPointMode;
+        var btn = document.getElementById('addPointModeBtn');
+        if (addPointMode) {
+            btn.classList.add('active');
+            btn.innerText = '✓ Modo Marcar Ativo (Clique na porta)';
+            document.getElementById('instructionText').innerText = '🎯 Clique com o botão esquerdo exatamente onde quer posicionar a passagem.';
+        } else {
+            btn.classList.remove('active');
+            btn.innerText = '📍 Ativar Modo: Marcar Ponto';
+            document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[currentSceneId].title + '". Arraste para girar a imagem livremente.';
+        }
+    }
 
     function addPhotoToTour() {
         var filename = document.getElementById('repoPhotosSelect').value;
@@ -172,40 +201,56 @@
         currentSceneId = sceneId;
         renderScenesList();
 
-        if (!viewer) {
-            viewer = pannellum.viewer('panorama', {
-                "default": tourData.default,
-                "scenes": tourData.scenes
-            });
-        } else {
-            viewer.destroy();
-            viewer = pannellum.viewer('panorama', {
-                "default": tourData.default,
-                "scenes": tourData.scenes
-            });
-        }
+        var container = document.getElementById('panorama');
+        // Mantém apenas o banner de instrução e limpa qualquer viewer anterior
+        container.innerHTML = '<div id="instruction-banner"><span id="instructionText"></span></div>';
+
+        viewer = pannellum.viewer('panorama', {
+            "default": tourData.default,
+            "scenes": tourData.scenes
+        });
 
         viewer.loadScene(sceneId);
 
-        document.getElementById('instructionText').innerText = '👉 Você está em "' + tourData.scenes[sceneId].title + '". Clique em uma porta ou no chão para criar uma seta de passagem.';
+        if (addPointMode) {
+            document.getElementById('instructionText').innerText = '🎯 Clique com o botão esquerdo exatamente onde quer posicionar a passagem.';
+        } else {
+            document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
+        }
 
-        // Captura o clique direto na imagem
-        viewer.on('load', function() {
-            var el = document.getElementById('panorama');
-            el.onclick = function(e) {
+        setupClickHandler();
+    }
+
+    function setupClickHandler() {
+        var el = document.getElementById('panorama');
+
+        el.onmousedown = function(e) {
+            isDragging = false;
+            startX = e.clientX;
+            startY = e.clientY;
+        };
+
+        el.onmousemove = function(e) {
+            if (Math.abs(e.clientX - startX) > 4 || Math.abs(e.clientY - startY) > 4) {
+                isDragging = true;
+            }
+        };
+
+        el.onmouseup = function(e) {
+            if (!isDragging && addPointMode) {
                 var coords = viewer.mouseEventToCoords(e);
                 if (coords && coords.length >= 2) {
                     tempCoords = coords;
                     openModal();
                 }
-            };
-        });
+            }
+        };
     }
 
     function openModal() {
         var otherScenes = Object.keys(tourData.scenes).filter(function(id) { return id !== currentSceneId; });
         if (otherScenes.length === 0) {
-            alert('Adicione pelo menos mais um cômodo no Passo 1 para poder ligar este a outro!');
+            alert('Adicione outro cômodo no menu para conectar a este!');
             return;
         }
 
@@ -240,14 +285,15 @@
         });
 
         closeModal();
+        toggleAddPointMode(); // Desativa o modo ponto após criar
         loadSceneInViewer(currentSceneId);
     }
 
     function generateFinalCode() {
-        var area = document.getElementByIdFinalCodeArea ? document.getElementByIdFinalCodeArea : document.getElementById('finalCodeArea');
+        var area = document.getElementById('finalCodeArea');
         area.value = JSON.stringify(tourData, null, 4);
         area.style.display = 'block';
-        alert('Tour configurado com sucesso! O código de configuração foi gerado no campo abaixo.');
+        alert('Código final do tour gerado com sucesso!');
     }
 </script>
 </body>
