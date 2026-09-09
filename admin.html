@@ -14,7 +14,7 @@
 
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; display: flex; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #12151b; color: #fff; }
-        #sidebar { width: 370px; background: #1a1e26; border-right: 1px solid #2d3442; display: flex; flex-direction: column; }
+        #sidebar { width: 360px; background: #1a1e26; border-right: 1px solid #2d3442; display: flex; flex-direction: column; }
         #sidebar-header { padding: 16px; border-bottom: 1px solid #2d3442; }
         #sidebar-header h1 { font-size: 18px; margin: 0 0 4px 0; color: #f5b301; }
         #sidebar-header p { font-size: 12px; color: #8c97a8; margin: 0; }
@@ -28,7 +28,7 @@
         
         label { font-size: 11px; color: #8c97a8; display: block; margin-top: 6px; }
         select, input, button, textarea { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #3b4457; background: #14171f; color: #fff; font-size: 12px; margin-top: 4px; }
-        input[type="range"] { padding: 0; margin-top: 6px; cursor: pointer; }
+        input[type="range"] { padding: 0; margin-top: 4px; cursor: pointer; }
         button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 8px; }
         button.primary:hover { background: #e0a200; }
         
@@ -42,10 +42,12 @@
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
+        /* Modal Flutuante com Ajustes Integrados */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
-        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 380px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 390px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
-        .modal-buttons { display: flex; gap: 8px; margin-top: 12px; }
+        .modal-section { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 10px; margin-top: 10px; }
+        .modal-buttons { display: flex; gap: 8px; margin-top: 14px; }
         .btn-cancel { background: #3b4457; color: #fff; border: none; cursor: pointer; }
         .btn-preview { background: #2d3748; color: #f5b301; border: 1px dashed #f5b301; cursor: pointer; margin-top: 6px; }
 
@@ -53,7 +55,7 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* ÍCONE CIRCULAR PERFEITO E TOTALMENTE TRAVADO NA CENA */
+        /* Estilo dos círculos fixos */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -75,7 +77,6 @@
             background: #ffffff !important;
         }
 
-        /* Oculta qualquer caixa extra que cause desalinhamento */
         .pnlm-tooltip span {
             display: none !important;
         }
@@ -86,7 +87,7 @@
 <div id="sidebar">
     <div id="sidebar-header">
         <h1>Criador de Tour 360</h1>
-        <p>Configuração de Hotspots Circulares</p>
+        <p>Painel Administrativo</p>
     </div>
 
     <div id="sidebar-content">
@@ -101,27 +102,16 @@
             <div style="margin-top: 10px;" id="tourScenesList"></div>
         </div>
 
-        <!-- Ajustes de Aparência dos Ícones -->
+        <!-- Passo 2: Marcar Ponto -->
         <div class="card">
-            <div class="card-title"><span class="step-number">2</span> Ajuste Visual dos Círculos</div>
-            
-            <label id="labelSize">Tamanho do Círculo: 36px</label>
-            <input type="range" id="inputSpotSize" min="20" max="70" value="36" oninput="updateSpotStyle()">
-
-            <label id="labelOpacity" style="margin-top:8px;">Transparência: 75%</label>
-            <input type="range" id="inputSpotOpacity" min="10" max="100" value="75" oninput="updateSpotStyle()">
-        </div>
-
-        <!-- Passo 3: Ponto de Passagem -->
-        <div class="card">
-            <div class="card-title"><span class="step-number">3</span> Posicionar Passagem</div>
-            <p style="font-size: 11px; color: #8c97a8; margin: 0 0 6px 0;">Arraste para girar. Ative o botão apenas quando for clicar na porta.</p>
+            <div class="card-title"><span class="step-number">2</span> Hotspots Interativos</div>
+            <p style="font-size: 11px; color: #8c97a8; margin: 0 0 6px 0;">Arraste para girar. Ative o botão quando for clicar no local exato.</p>
             <button id="addPointModeBtn" class="tool-btn" onclick="toggleAddPointMode()">📍 Ativar Modo: Marcar Ponto</button>
         </div>
 
-        <!-- Passo 4: Concluir -->
+        <!-- Passo 3: Exportar -->
         <div class="card">
-            <div class="card-title"><span class="step-number">4</span> Finalizar Tour</div>
+            <div class="card-title"><span class="step-number">3</span> Finalizar Tour</div>
             <button class="primary" onclick="generateFinalCode()">Concluir Tour</button>
             <textarea id="finalCodeArea" style="display:none; width: 100%; height: 110px; margin-top: 8px; background: #14171f; color: #00e676; border: 1px solid #2e3748; border-radius: 6px; padding: 6px; font-family: monospace; font-size: 11px;"></textarea>
         </div>
@@ -137,19 +127,49 @@
     </div>
 </div>
 
-<!-- Modal Flutuante de Configuração do Ponto -->
+<!-- Modal Flutuante com Tipo e Controles de Visual -->
 <div id="modal-overlay">
     <div id="modal-box">
-        <h3>Criar Passagem de Ambiente</h3>
-        <label>Levar para qual cômodo?</label>
-        <select id="modalTargetScene" onchange="updateDefaultText()"></select>
+        <h3>Configurar Ponto Interativo</h3>
+        
+        <label>Tipo de Hotspot:</label>
+        <select id="hotspotTypeSelect" onchange="toggleHotspotModalFields()">
+            <option value="scene">Passagem de Ambiente (Trocar de Cômodo)</option>
+            <option value="info">Informação (Texto / Link)</option>
+        </select>
 
-        <label>Texto da Seta:</label>
-        <input type="text" id="modalText" placeholder="ex: Ir para o Corredor">
+        <!-- Campos de Passagem -->
+        <div id="fieldSceneWrap" style="margin-top: 8px;">
+            <label>Levar para qual cômodo?</label>
+            <select id="modalTargetScene" onchange="updateDefaultText()"></select>
 
-        <label>Direção da visão ao chegar:</label>
-        <button type="button" class="btn-preview" onclick="startVisualAlign()">🎯 Alinhar visão no destino</button>
-        <span id="yawInfoText" style="display:block; font-size:11px; color:#10b981; margin-top:3px;">Usando visão padrão (0°)</span>
+            <label>Texto da Seta:</label>
+            <input type="text" id="modalText" placeholder="ex: Ir para o Corredor">
+
+            <label>Direção da visão ao chegar:</label>
+            <button type="button" class="btn-preview" onclick="startVisualAlign()">🎯 Alinhar visão no destino</button>
+            <span id="yawInfoText" style="display:block; font-size:11px; color:#10b981; margin-top:3px;">Usando visão padrão (0°)</span>
+        </div>
+
+        <!-- Campos de Informação -->
+        <div id="fieldInfoWrap" style="display: none; margin-top: 8px;">
+            <label>Texto da Informação:</label>
+            <input type="text" id="modalInfoText" placeholder="ex: Bancada em granito São Gabriel">
+
+            <label>Link Externo (opcional):</label>
+            <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
+        </div>
+
+        <!-- Ajuste Visual Integrado dentro da caixa -->
+        <div class="modal-section">
+            <label style="color:#f5b301; font-weight:bold; margin-top:0;">Aparência do Círculo:</label>
+            
+            <label id="labelSize">Tamanho: 36px</label>
+            <input type="range" id="inputSpotSize" min="20" max="70" value="36" oninput="updateSpotStyle()">
+
+            <label id="labelOpacity" style="margin-top:6px;">Transparência: 75%</label>
+            <input type="range" id="inputSpotOpacity" min="10" max="100" value="75" oninput="updateSpotStyle()">
+        </div>
 
         <div class="modal-buttons">
             <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -172,12 +192,11 @@
     var isDragging = false;
     var startX = 0, startY = 0;
 
-    // Atualização em tempo real do tamanho e transparência
     function updateSpotStyle() {
         var size = document.getElementById('inputSpotSize').value;
         var opacity = document.getElementById('inputSpotOpacity').value;
 
-        document.getElementById('labelSize').innerText = 'Tamanho do Círculo: ' + size + 'px';
+        document.getElementById('labelSize').innerText = 'Tamanho: ' + size + 'px';
         document.getElementById('labelOpacity').innerText = 'Transparência: ' + opacity + '%';
 
         document.documentElement.style.setProperty('--spot-size', size + 'px');
@@ -205,6 +224,12 @@
             });
     });
 
+    function toggleHotspotModalFields() {
+        var type = document.getElementById('hotspotTypeSelect').value;
+        document.getElementById('fieldSceneWrap').style.display = type === 'scene' ? 'block' : 'none';
+        document.getElementById('fieldInfoWrap').style.display = type === 'info' ? 'block' : 'none';
+    }
+
     function toggleAddPointMode() {
         if (!currentSceneId) return alert('Adicione um ambiente primeiro!');
         addPointMode = !addPointMode;
@@ -212,7 +237,7 @@
         if (addPointMode) {
             btn.classList.add('active');
             btn.innerText = '✓ Modo Marcar Ativo (Clique no local)';
-            document.getElementById('instructionText').innerText = '🎯 Clique no ponto exato onde a passagem deve ficar travada.';
+            document.getElementById('instructionText').innerText = '🎯 Clique no ponto exato onde deseja posicionar o ponto.';
         } else {
             btn.classList.remove('active');
             btn.innerText = '📍 Ativar Modo: Marcar Ponto';
@@ -240,7 +265,7 @@
         for (var id in tourData.scenes) {
             var chip = document.createElement('div');
             chip.className = 'photo-chip' + (id === currentSceneId ? ' active' : '');
-            chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' passagens</span>';
+            chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' pontos</span>';
             chip.onclick = (function(sceneId) {
                 return function() { switchSceneView(sceneId); };
             })(id);
@@ -291,8 +316,6 @@
 
     function openModal() {
         var otherScenes = Object.keys(tourData.scenes).filter(function(id) { return id !== currentSceneId; });
-        if (otherScenes.length === 0) return alert('Adicione outro cômodo no menu para conectar a este!');
-
         var select = document.getElementById('modalTargetScene');
         select.innerHTML = '';
         otherScenes.forEach(function(id) {
@@ -302,7 +325,11 @@
             select.appendChild(opt);
         });
 
+        document.getElementById('hotspotTypeSelect').value = otherScenes.length > 0 ? 'scene' : 'info';
+        toggleHotspotModalFields();
         updateDefaultText();
+        document.getElementById('modalInfoText').value = '';
+        document.getElementById('modalInfoUrl').value = '';
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
@@ -335,18 +362,24 @@
     }
 
     function confirmHotspot() {
-        var targetSceneId = document.getElementById('modalTargetScene').value;
-        var text = document.getElementById('modalText').value || 'Avançar';
-
-        tourData.scenes[currentSceneId].hotSpots.push({
+        var type = document.getElementById('hotspotTypeSelect').value;
+        var spotObj = {
             "pitch": parseFloat(tempCoords[0].toFixed(2)),
             "yaw": parseFloat(tempCoords[1].toFixed(2)),
-            "type": "scene",
-            "text": text,
-            "sceneId": targetSceneId,
-            "targetYaw": tempTargetYaw
-        });
+            "type": type
+        };
 
+        if (type === 'scene') {
+            spotObj.text = document.getElementById('modalText').value || 'Avançar';
+            spotObj.sceneId = document.getElementById('modalTargetScene').value;
+            spotObj.targetYaw = tempTargetYaw;
+        } else {
+            spotObj.text = document.getElementById('modalInfoText').value || 'Informação';
+            var linkUrl = document.getElementById('modalInfoUrl').value.trim();
+            if (linkUrl) spotObj.URL = linkUrl;
+        }
+
+        tourData.scenes[currentSceneId].hotSpots.push(spotObj);
         closeModal();
         if (addPointMode) toggleAddPointMode();
         rebuildViewer(currentSceneId);
