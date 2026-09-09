@@ -17,8 +17,6 @@
         input, select, button { width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #444; background: #16191f; color: #fff; font-size: 13px; }
         button { background: #f5b301; color: #000; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; }
         button:hover { background: #e0a200; }
-        .btn-del { background: #d9534f; color: #fff; margin-top: 5px; }
-        .btn-del:hover { background: #c9302c; }
         textarea { width: 100%; height: 140px; background: #111; color: #0f0; font-family: monospace; font-size: 11px; padding: 6px; border: 1px solid #444; margin-top: 8px; }
         .info { font-size: 12px; color: #8bc34a; line-height: 1.4; }
     </style>
@@ -30,12 +28,14 @@
     
     <div class="box">
         <h3>1. Cenas (Ambientes)</h3>
+        <label>Selecione a Imagem do Repositório:</label>
+        <select id="sceneFile">
+            <option value="">Carregando arquivos do GitHub...</option>
+        </select>
         <label>ID da Cena (ex: banheiro):</label>
         <input type="text" id="sceneId" placeholder="ex: banheiro">
         <label>Título amigável:</label>
         <input type="text" id="sceneTitle" placeholder="ex: Banheiro Social">
-        <label>Nome do arquivo JPG:</label>
-        <input type="text" id="sceneFile" placeholder="ex: banheiro.jpg">
         <button onclick="addScene()">Adicionar Cena</button>
         
         <label style="margin-top: 12px;">Trocar para Cena:</label>
@@ -77,6 +77,44 @@
     var viewer = null;
     var currentScene = "";
 
+    // Busca automática dos arquivos de imagem no GitHub
+    window.addEventListener('load', function() {
+        var repoUser = "mafiazeredo";
+        var repoName = "tour360";
+        var apiUrl = "https://api.github.com/repos/" + repoUser + "/" + repoName + "/contents/";
+
+        fetch(apiUrl)
+            .then(function(res) { return res.json(); })
+            .then(function(files) {
+                var select = document.getElementById('sceneFile');
+                select.innerHTML = '<option value="">-- Escolha uma imagem --</option>';
+                
+                var imageFiles = files.filter(function(item) {
+                    return item.type === "file" && /\.(jpg|jpeg|png)$/i.test(item.name);
+                });
+
+                imageFiles.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.name;
+                    opt.text = item.name;
+                    select.appendChild(opt);
+                });
+
+                select.onchange = function() {
+                    var val = select.value;
+                    if (val) {
+                        var baseName = val.substring(0, val.lastIndexOf('.')) || val;
+                        document.getElementById('sceneId').value = baseName;
+                        document.getElementById('sceneTitle').value = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+                    }
+                };
+            })
+            .catch(function(err) {
+                var select = document.getElementById('sceneFile');
+                select.innerHTML = '<option value="">Erro ao carregar lista de arquivos</option>';
+            });
+    });
+
     function initViewer(firstSceneId) {
         if (viewer) viewer.destroy();
         viewer = pannellum.viewer('panorama', {
@@ -105,7 +143,8 @@
         var title = document.getElementById('sceneTitle').value.trim();
         var file = document.getElementById('sceneFile').value.trim();
 
-        if (!id || !file) { alert('Informe ID e nome do arquivo JPG!'); return; }
+        if (!file) { alert('Selecione uma imagem na lista!'); return; }
+        if (!id) { alert('Informe o ID da cena!'); return; }
 
         tourData.scenes[id] = {
             "title": title || id,
@@ -118,10 +157,6 @@
 
         updateSceneDropdowns();
         initViewer(id);
-
-        document.getElementById('sceneId').value = '';
-        document.getElementById('sceneTitle').value = '';
-        document.getElementById('sceneFile').value = '';
     }
 
     function updateSceneDropdowns() {
