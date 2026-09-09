@@ -36,13 +36,12 @@
             "panorama": "banheiro.jpg",
             "hotSpots": [
                 {
-                    "pitch": -25.13,
-                    "yaw": 35.75,
+                    "pitch": -36.07,
+                    "yaw": 35.44,
                     "type": "scene",
                     "text": "Ir para Corredor",
                     "sceneId": "corredor",
-                    "targetYaw": 77,
-                    "div": {}
+                    "targetYaw": 77
                 }
             ]
         },
@@ -52,18 +51,157 @@
             "panorama": "corredor.jpg",
             "hotSpots": [
                 {
-                    "pitch": -47.73,
-                    "yaw": -102.11,
+                    "pitch": -55.39,
+                    "yaw": -104.27,
                     "type": "scene",
                     "text": "Ir para Banheiro",
                     "sceneId": "banheiro",
-                    "targetYaw": -153
+                    "targetYaw": -150
+                },
+                {
+                    "pitch": -38.96,
+                    "yaw": -17.51,
+                    "type": "scene",
+                    "text": "Ir para Corredor2",
+                    "sceneId": "corredor2",
+                    "targetYaw": -159
+                },
+                {
+                    "pitch": -52.29,
+                    "yaw": 173.26,
+                    "type": "scene",
+                    "text": "Ir para Sala2",
+                    "sceneId": "sala2",
+                    "targetYaw": 165
+                }
+            ]
+        },
+        "corredor2": {
+            "title": "Corredor2",
+            "type": "equirectangular",
+            "panorama": "corredor2.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -55.34,
+                    "yaw": 149.65,
+                    "type": "scene",
+                    "text": "Ir para Suite",
+                    "sceneId": "suite",
+                    "targetYaw": -90
+                },
+                {
+                    "pitch": -60.84,
+                    "yaw": -112.13,
+                    "type": "scene",
+                    "text": "Ir para Escritorio",
+                    "sceneId": "escritorio",
+                    "targetYaw": 179
+                },
+                {
+                    "pitch": -58.45,
+                    "yaw": -19.62,
+                    "type": "scene",
+                    "text": "Ir para Quarto",
+                    "sceneId": "quarto",
+                    "targetYaw": -41
+                },
+                {
+                    "pitch": -48.72,
+                    "yaw": 43.51,
+                    "type": "scene",
+                    "text": "Ir para Corredor",
+                    "sceneId": "corredor",
+                    "targetYaw": 177
+                }
+            ]
+        },
+        "escritorio": {
+            "title": "Escritorio",
+            "type": "equirectangular",
+            "panorama": "escritorio.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -45.94,
+                    "yaw": 24.27,
+                    "type": "scene",
+                    "text": "Ir para Corredor2",
+                    "sceneId": "corredor2",
+                    "targetYaw": 64
+                }
+            ]
+        },
+        "quarto": {
+            "title": "Quarto",
+            "type": "equirectangular",
+            "panorama": "quarto.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -42.34,
+                    "yaw": 134.89,
+                    "type": "scene",
+                    "text": "Ir para Corredor2",
+                    "sceneId": "corredor2",
+                    "targetYaw": 136
+                }
+            ]
+        },
+        "sala": {
+            "title": "Sala",
+            "type": "equirectangular",
+            "panorama": "sala.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -36.87,
+                    "yaw": 18.89,
+                    "type": "scene",
+                    "text": "Ir para Sala2",
+                    "sceneId": "sala2",
+                    "targetYaw": -11
+                }
+            ]
+        },
+        "sala2": {
+            "title": "Sala2",
+            "type": "equirectangular",
+            "panorama": "sala2.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -39.95,
+                    "yaw": 99.87,
+                    "type": "scene",
+                    "text": "Ir para Sala",
+                    "sceneId": "sala",
+                    "targetYaw": -155,
+                    "div": {}
+                },
+                {
+                    "pitch": -30.52,
+                    "yaw": 45.07,
+                    "type": "scene",
+                    "text": "Ir para Corredor",
+                    "sceneId": "corredor",
+                    "targetYaw": -27,
+                    "div": {}
+                }
+            ]
+        },
+        "suite": {
+            "title": "Suite",
+            "type": "equirectangular",
+            "panorama": "suite.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -38.91,
+                    "yaw": 76.62,
+                    "type": "scene",
+                    "text": "Ir para Corredor2",
+                    "sceneId": "corredor2",
+                    "targetYaw": 47
                 }
             ]
         }
     }
-};
-
+}
         pannellum.viewer('panorama', tourConfig);
 
         window.addEventListener('load', function() {
