@@ -42,7 +42,7 @@
         button.tool-btn { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; font-weight: 500; }
         button.tool-btn.active { background: #10b981; border-color: #059669; color: #fff; }
         
-        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; cursor: pointer; }
+        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; cursor: pointer; }
         .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
         .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
         
@@ -572,25 +572,10 @@
         for (var id in tourData.scenes) {
             var chip = document.createElement('div');
             chip.className = 'photo-chip' + (id === currentSceneId ? ' active' : '');
-            
-            var infoWrap = document.createElement('div');
-            infoWrap.className = 'photo-chip-info';
-            infoWrap.onclick = (function(sceneId) {
+            chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' pontos</span>';
+            chip.onclick = (function(sceneId) {
                 return function() { switchSceneView(sceneId); };
             })(id);
-
-            var titleSpan = document.createElement('span');
-            titleSpan.className = 'photo-chip-title';
-            titleSpan.innerText = tourData.scenes[id].title;
-
-            var badgeSpan = document.createElement('span');
-            badgeSpan.className = 'badge';
-            badgeSpan.innerText = tourData.scenes[id].hotSpots.length + ' pts';
-
-            infoWrap.appendChild(titleSpan);
-            infoWrap.appendChild(badgeSpan);
-
-            chip.appendChild(infoWrap);
             container.appendChild(chip);
         }
     }
@@ -715,13 +700,22 @@
             });
         }
 
-        // Garante que a cena inicial do leitor seja EXATAMENTE a cena clicada/adicionada
         var viewerConfig = JSON.parse(JSON.stringify(tourData.default));
         viewerConfig.firstScene = targetSceneId;
 
         viewer = pannellum.viewer('panorama', {
             "default": viewerConfig,
             "scenes": cleanScenes
+        });
+
+        // Sincroniza o menu esquerdo quando a navegação ocorre por clique em hotspot dentro do tour
+        viewer.on('scenechange', function(newSceneId) {
+            if (currentSceneId !== newSceneId && tourData.scenes[newSceneId]) {
+                currentSceneId = newSceneId;
+                renderScenesList();
+                renderActiveSceneHotspots();
+                document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[newSceneId].title + '". Arraste para girar livremente.';
+            }
         });
 
         document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[targetSceneId].title + '". Arraste para girar livremente.';
@@ -903,8 +897,6 @@
 
         closeModal();
         if (addPointMode) toggleAddPointMode();
-        renderScenesList();
-        renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
 
