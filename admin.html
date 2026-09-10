@@ -9,7 +9,7 @@
     <style id="custom-hotspot-style">
         :root {
             --spot-size: 40px;
-            --spot-opacity: 0.8;
+            --spot-opacity: 0.85;
             --spot-color: #f5b301;
         }
 
@@ -56,11 +56,11 @@
         .color-presets { display: flex; gap: 6px; margin-top: 6px; }
         .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
 
-        .icon-selector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
-        .icon-choice-card { background: #14171f; border: 1px solid #3b4457; border-radius: 6px; padding: 8px 4px; text-align: center; cursor: pointer; }
+        .icon-selector-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px; }
+        .icon-choice-card { background: #14171f; border: 1px solid #3b4457; border-radius: 6px; padding: 10px 4px; text-align: center; cursor: pointer; }
         .icon-choice-card.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
         .icon-choice-preview { font-size: 22px; display: block; margin-bottom: 4px; }
-        .icon-choice-label { font-size: 10px; color: #8c97a8; }
+        .icon-choice-label { font-size: 11px; color: #8c97a8; }
 
         #dial-container { width: 120px; height: 120px; border-radius: 50%; background: #14171f; border: 2px dashed #f5b301; margin: 10px auto; position: relative; cursor: crosshair; display: flex; align-items: center; justify-content: center; user-select: none; }
         #dial-needle { width: 4px; height: 46px; background: #f5b301; position: absolute; bottom: 50%; transform-origin: bottom center; border-radius: 2px; pointer-events: none; }
@@ -83,7 +83,7 @@
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
         /* =======================================================
-           ESTILO DO CÍRCULO 2D ORIGINAL (TRAVADO E NATIVO)
+           CÍRCULO BASE 2D NATIVO COM CENTRALIZAÇÃO RIGOROSA
            ======================================================= */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
@@ -92,13 +92,11 @@
             margin-top: calc(var(--spot-size) / -2) !important;
             opacity: var(--spot-opacity) !important;
             cursor: pointer !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            visibility: visible !important;
+            display: block !important;
+            position: absolute !important;
             border-radius: 50% !important;
             background: var(--spot-color) !important;
-            border: 2px solid rgba(255, 255, 255, 0.95) !important;
+            border: 2px solid #ffffff !important;
             box-shadow: 0 0 8px rgba(0, 0, 0, 0.6) !important;
             transition: none !important;
         }
@@ -108,62 +106,61 @@
             background: #ffffff !important;
         }
 
-        /* Ícone interno da Seta (gira acompanhando o tour) */
-        .spot-arrow-icon {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            transform-origin: center center;
+        /* SETA CRAVADA RIGOROSAMENTE NO CENTRO DO CÍRCULO */
+        .spot-arrow-center {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            width: calc(var(--spot-size) * 0.46) !important;
+            height: calc(var(--spot-size) * 0.46) !important;
+            margin-top: calc(var(--spot-size) * -0.23) !important;
+            margin-left: calc(var(--spot-size) * -0.23) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            pointer-events: none !important;
+            transform-origin: center center !important;
         }
 
-        .spot-arrow-icon::before {
-            content: "▲";
-            color: #ffffff;
-            font-size: calc(var(--spot-size) * 0.45);
-            line-height: 1;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        .spot-arrow-center svg {
+            width: 100% !important;
+            height: 100% !important;
+            fill: #ffffff !important;
+            display: block !important;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)) !important;
         }
 
-        .pnlm-hotspot-base:hover .spot-arrow-icon::before {
-            color: var(--spot-color);
+        .pnlm-hotspot-base:hover .spot-arrow-center svg {
+            fill: var(--spot-color) !important;
         }
 
-        /* Ícone interno de Info 2D */
-        .pnlm-hotspot-base.shape-info::after {
-            content: "ℹ";
-            color: #ffffff;
-            font-size: calc(var(--spot-size) * 0.55);
-            font-weight: bold;
-            font-family: serif;
-            line-height: 1;
-        }
-        .pnlm-hotspot-base.shape-info:hover::after {
-            color: var(--spot-color);
-        }
-
-        /* TOOLTIP REFINADO NO HOVER */
+        /* POSICIONAMENTO DO TEXTO CONFIGURÁVEL (ACIMA OU ABAIXO) */
         .pnlm-tooltip span {
-            display: none !important;
-        }
-        .pnlm-hotspot-base:hover .pnlm-tooltip span {
             display: block !important;
             position: absolute !important;
-            bottom: calc(100% + 8px) !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
-            background: rgba(18, 21, 27, 0.95) !important;
-            color: #fff !important;
-            padding: 5px 9px !important;
-            border-radius: 4px !important;
-            font-size: 11px !important;
             white-space: nowrap !important;
-            border: 1px solid var(--spot-color) !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6) !important;
+            color: #ffffff !important;
+            font-size: 11px !important;
+            font-weight: 500 !important;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 6px rgba(0,0,0,0.9) !important;
             pointer-events: none !important;
-            z-index: 999 !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            background: rgba(18, 21, 27, 0.7) !important;
+        }
+
+        /* Texto posicionado ACIMA do círculo */
+        .text-pos-top .pnlm-tooltip span {
+            bottom: calc(100% + 6px) !important;
+            top: auto !important;
+        }
+
+        /* Texto posicionado ABAIXO do círculo */
+        .text-pos-bottom .pnlm-tooltip span {
+            top: calc(100% + 6px) !important;
+            bottom: auto !important;
         }
 
         /* LIGHTBOX */
@@ -244,7 +241,7 @@
     </div>
 </div>
 
-<!-- Modal Flutuante com Seleção Visual e Bússola -->
+<!-- Modal Flutuante -->
 <div id="modal-overlay">
     <div id="modal-box">
         <h3 id="modalTitleText">Configurar Ponto Interativo</h3>
@@ -260,8 +257,14 @@
             <label>Levar para qual cômodo?</label>
             <select id="modalTargetScene" onchange="updateDefaultText()"></select>
 
-            <label>Texto descritivo (ao passar o cursor):</label>
+            <label>Texto descritivo:</label>
             <input type="text" id="modalText" placeholder="ex: Ir para a Sala">
+
+            <label>Posição do Texto:</label>
+            <select id="modalTextPositionSelect">
+                <option value="top">Acima do círculo</option>
+                <option value="bottom">Abaixo do círculo</option>
+            </select>
 
             <label>Direção da visão ao chegar:</label>
             <button type="button" class="btn-preview" onclick="startVisualAlign()">🎯 Alinhar visão no destino</button>
@@ -272,6 +275,12 @@
         <div id="fieldInfoWrap" style="display: none; margin-top: 8px;">
             <label>Texto descritivo / Título da Foto:</label>
             <input type="text" id="modalInfoText" placeholder="ex: Detalhe do Acabamento">
+
+            <label>Posição do Texto:</label>
+            <select id="modalInfoTextPositionSelect">
+                <option value="top">Acima do círculo</option>
+                <option value="bottom">Abaixo do círculo</option>
+            </select>
 
             <label>Foto do Repositório:</label>
             <select id="modalInfoImageSelect" onchange="applySelectedRepoImage()">
@@ -290,7 +299,7 @@
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Seletor Visual de Formatos 2D -->
+        <!-- Seletor: Círculo Limpo ou com Seta -->
         <div class="modal-section">
             <label style="color:#f5b301; font-weight:bold; margin-top:0;">Formato do Ícone:</label>
             
@@ -301,11 +310,7 @@
                 </div>
                 <div class="icon-choice-card active" onclick="selectShape('shape-arrow', this)">
                     <span class="icon-choice-preview">▲</span>
-                    <span class="icon-choice-label">Círculo c/ Seta</span>
-                </div>
-                <div class="icon-choice-card" onclick="selectShape('shape-info', this)">
-                    <span class="icon-choice-preview">ℹ️</span>
-                    <span class="icon-choice-label">Círculo c/ Info</span>
+                    <span class="icon-choice-label">Círculo com Seta</span>
                 </div>
             </div>
 
@@ -331,8 +336,8 @@
             <label id="labelSize" style="margin-top:8px;">Tamanho: 40px</label>
             <input type="range" id="inputSpotSize" min="28" max="75" value="40" oninput="updateSpotStyle()">
 
-            <label id="labelOpacity" style="margin-top:6px;">Opacidade: 80%</label>
-            <input type="range" id="inputSpotOpacity" min="20" max="100" value="80" oninput="updateSpotStyle()">
+            <label id="labelOpacity" style="margin-top:6px;">Opacidade: 85%</label>
+            <input type="range" id="inputSpotOpacity" min="20" max="100" value="85" oninput="updateSpotStyle()">
         </div>
 
         <div class="modal-buttons">
@@ -342,7 +347,7 @@
     </div>
 </div>
 
-<!-- Lightbox de Imagem Cheia -->
+<!-- Lightbox -->
 <div id="lightbox-overlay" onclick="closeLightbox()">
     <img id="lightbox-img" src="" alt="Detalhe">
     <div id="lightbox-caption"></div>
@@ -367,7 +372,7 @@
     var isDialDragging = false;
     var startX = 0, startY = 0;
     var availableRepoImages = [];
-    var arrowNodes = []; // Armazena referências dos elementos de seta para girar com o tour
+    var arrowNodes = [];
 
     // Bússola Visual
     function startDialDrag(e) {
@@ -623,7 +628,7 @@
         document.getElementById('lightbox-overlay').style.display = 'none';
     }
 
-    // Animação contínua da rotação da seta para acompanhar o giro da câmera
+    // Sincronização contínua da rotação da seta cravada no centro
     function updateArrowsRotation() {
         if (!viewer) return;
         var currentYaw = viewer.getYaw();
@@ -649,22 +654,24 @@
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
                 var shapeClass = sp.shape || 'shape-arrow';
-                sp.cssClass = shapeClass;
+                var posClass = (sp.textPosition === 'bottom') ? 'text-pos-bottom' : 'text-pos-top';
+                sp.cssClass = shapeClass + ' ' + posClass;
 
-                // Renderiza o interior do hotspot de forma 100% nativa
                 sp.createTooltipFunc = function(hotSpotDiv, args) {
                     if (args.shape === 'shape-arrow') {
-                        var iconDiv = document.createElement('div');
-                        iconDiv.className = 'spot-arrow-icon';
-                        hotSpotDiv.appendChild(iconDiv);
-                        arrowNodes.push({ elem: iconDiv, baseAngle: args.rotation || 0 });
+                        var arrowDiv = document.createElement('div');
+                        arrowDiv.className = 'spot-arrow-center';
+                        arrowDiv.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3l8 17-8-5-8 5z"/></svg>';
+                        hotSpotDiv.appendChild(arrowDiv);
+                        arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
                     }
-                    if (args.text) {
+                    if (args.text && args.text.trim() !== '') {
                         var span = document.createElement('span');
                         span.innerText = args.text;
                         hotSpotDiv.appendChild(span);
                     }
                 };
+
                 sp.createTooltipArgs = {
                     shape: shapeClass,
                     rotation: sp.rotation || 0,
@@ -739,6 +746,8 @@
         document.getElementById('modalFinalImageData').value = '';
         document.getElementById('modalInfoImageSelect').value = '';
         document.getElementById('modalLocalFileInput').value = '';
+        document.getElementById('modalTextPositionSelect').value = 'top';
+        document.getElementById('modalInfoTextPositionSelect').value = 'top';
         document.getElementById('imagePreviewContainer').style.display = 'none';
 
         selectShapeByName('shape-arrow');
@@ -760,6 +769,10 @@
 
         document.getElementById('hotspotTypeSelect').value = spot.type || 'scene';
         toggleHotspotModalFields();
+
+        var pos = spot.textPosition || 'top';
+        document.getElementById('modalTextPositionSelect').value = pos;
+        document.getElementById('modalInfoTextPositionSelect').value = pos;
 
         if (spot.type === 'scene') {
             document.getElementById('modalTargetScene').value = spot.sceneId || '';
@@ -831,21 +844,25 @@
 
     function confirmHotspot() {
         var type = document.getElementById('hotspotTypeSelect').value;
+        var textPos = (type === 'scene') 
+            ? document.getElementById('modalTextPositionSelect').value 
+            : document.getElementById('modalInfoTextPositionSelect').value;
 
         var spotObj = {
             "pitch": parseFloat(tempCoords[0].toFixed(2)),
             "yaw": parseFloat(tempCoords[1].toFixed(2)),
             "type": type,
             "shape": currentSelectedShape,
+            "textPosition": textPos,
             "rotation": (currentSelectedShape === 'shape-arrow') ? visualArrowAngle : 0
         };
 
         if (type === 'scene') {
-            spotObj.text = document.getElementById('modalText').value || 'Avançar';
+            spotObj.text = document.getElementById('modalText').value || '';
             spotObj.sceneId = document.getElementById('modalTargetScene').value;
             spotObj.targetYaw = tempTargetYaw;
         } else {
-            spotObj.text = document.getElementById('modalInfoText').value || 'Detalhe';
+            spotObj.text = document.getElementById('modalInfoText').value || '';
             var imgData = document.getElementById('modalFinalImageData').value;
             if (imgData) spotObj.image = imgData;
             var linkUrl = document.getElementById('modalInfoUrl').value.trim();
@@ -863,7 +880,6 @@
         rebuildViewer(currentSceneId);
     }
 
-    // Inicia o loop para sincronizar a rotação das setas com a rotação da câmera
     requestAnimationFrame(updateArrowsRotation);
 </script>
 </body>
