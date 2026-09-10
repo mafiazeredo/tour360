@@ -367,6 +367,8 @@
 
     var viewer = null;
     var currentSceneId = "";
+    var originSceneBeforeAlign = ""; // Armazena a cena de origem ao alinhar
+    var isAligningView = false;      // Trava de alinhamento
     var tempCoords = null;
     var tempTargetYaw = 0;
     var currentSelectedShape = "shape-arrow";
@@ -708,8 +710,9 @@
             "scenes": cleanScenes
         });
 
-        // Sincroniza o menu esquerdo quando a navegação ocorre por clique em hotspot dentro do tour
+        // Sincronização segura: NÃO atualiza currentSceneId se estiver alinhando visão
         viewer.on('scenechange', function(newSceneId) {
+            if (isAligningView) return; // Trava ativada: ignora para manter a cena de origem
             if (currentSceneId !== newSceneId && tourData.scenes[newSceneId]) {
                 currentSceneId = newSceneId;
                 renderScenesList();
@@ -842,6 +845,10 @@
     function startVisualAlign() {
         var targetSceneId = document.getElementById('modalTargetScene').value;
         if (!targetSceneId) return alert('Selecione um cômodo de destino!');
+        
+        originSceneBeforeAlign = currentSceneId; // Guarda a cena de origem com segurança
+        isAligningView = true;                   // Ativa a trava para não trocar a cena de gravação
+        
         document.getElementById('modal-overlay').style.display = 'none';
         viewer.loadScene(targetSceneId);
         document.getElementById('align-banner').style.display = 'block';
@@ -850,7 +857,13 @@
     function confirmTargetYaw() {
         tempTargetYaw = Math.round(viewer.getYaw());
         document.getElementById('align-banner').style.display = 'none';
+        
+        // Retorna com precisão para a cena original
+        currentSceneId = originSceneBeforeAlign;
         viewer.loadScene(currentSceneId);
+        
+        isAligningView = false; // Desativa a trava
+        
         document.getElementById('yawInfoText').innerText = '✓ Alinhado em: ' + tempTargetYaw + '°';
         document.getElementById('modal-overlay').style.display = 'flex';
     }
@@ -859,6 +872,8 @@
         document.getElementById('modal-overlay').style.display = 'none';
         tempCoords = null;
         editingHotspotIndex = null;
+        isAligningView = false;
+        if (originSceneBeforeAlign) currentSceneId = originSceneBeforeAlign;
         if (viewer.getScene() !== currentSceneId) viewer.loadScene(currentSceneId);
     }
 
@@ -897,6 +912,8 @@
 
         closeModal();
         if (addPointMode) toggleAddPointMode();
+        renderScenesList();
+        renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
 
