@@ -487,8 +487,10 @@
                 if (loadedData.scenes && loadedData.default) {
                     tourData = loadedData;
                     var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
+                    currentSceneId = firstScene;
                     renderScenesList();
-                    if (firstScene) rebuildViewer(firstScene);
+                    renderActiveSceneHotspots();
+                    rebuildViewer(firstScene);
                     alert('Tour carregado com sucesso!');
                 } else {
                     alert('Formato de arquivo inválido!');
@@ -560,6 +562,7 @@
 
         currentSceneId = id;
         renderScenesList();
+        renderActiveSceneHotspots();
         rebuildViewer(id);
     }
 
@@ -569,10 +572,25 @@
         for (var id in tourData.scenes) {
             var chip = document.createElement('div');
             chip.className = 'photo-chip' + (id === currentSceneId ? ' active' : '');
-            chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' pontos</span>';
-            chip.onclick = (function(sceneId) {
+            
+            var infoWrap = document.createElement('div');
+            infoWrap.className = 'photo-chip-info';
+            infoWrap.onclick = (function(sceneId) {
                 return function() { switchSceneView(sceneId); };
             })(id);
+
+            var titleSpan = document.createElement('span');
+            titleSpan.className = 'photo-chip-title';
+            titleSpan.innerText = tourData.scenes[id].title;
+
+            var badgeSpan = document.createElement('span');
+            badgeSpan.className = 'badge';
+            badgeSpan.innerText = tourData.scenes[id].hotSpots.length + ' pts';
+
+            infoWrap.appendChild(titleSpan);
+            infoWrap.appendChild(badgeSpan);
+
+            chip.appendChild(infoWrap);
             container.appendChild(chip);
         }
     }
@@ -619,10 +637,7 @@
         currentSceneId = sceneId;
         renderScenesList();
         renderActiveSceneHotspots();
-        if (viewer) {
-            viewer.loadScene(sceneId);
-            document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
-        }
+        rebuildViewer(sceneId);
     }
 
     function openLightbox(src, caption) {
@@ -663,7 +678,6 @@
                 sp.cssClass = shapeClass;
 
                 sp.createTooltipFunc = function(hotSpotDiv, args) {
-                    // Seta no centro
                     if (args.shape === 'shape-arrow') {
                         var arrowDiv = document.createElement('div');
                         arrowDiv.className = 'spot-arrow-center';
@@ -672,7 +686,6 @@
                         arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
                     }
                     
-                    // Texto fora do círculo
                     if (args.text && args.text.trim() !== '') {
                         var labelDiv = document.createElement('div');
                         labelDiv.className = 'spot-label ' + (args.textPosition === 'bottom' ? 'pos-bottom' : 'pos-top');
@@ -702,12 +715,15 @@
             });
         }
 
+        // Garante que a cena inicial do leitor seja EXATAMENTE a cena clicada/adicionada
+        var viewerConfig = JSON.parse(JSON.stringify(tourData.default));
+        viewerConfig.firstScene = targetSceneId;
+
         viewer = pannellum.viewer('panorama', {
-            "default": tourData.default,
+            "default": viewerConfig,
             "scenes": cleanScenes
         });
 
-        viewer.loadScene(targetSceneId);
         document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[targetSceneId].title + '". Arraste para girar livremente.';
         setupClickHandler();
     }
@@ -887,6 +903,8 @@
 
         closeModal();
         if (addPointMode) toggleAddPointMode();
+        renderScenesList();
+        renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
 
