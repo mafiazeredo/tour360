@@ -9,7 +9,8 @@
     <style id="custom-hotspot-style">
         :root {
             --spot-size: 36px;
-            --spot-opacity: 0.75;
+            --spot-opacity: 0.85;
+            --spot-color: #f5b301;
         }
 
         * { box-sizing: border-box; }
@@ -30,6 +31,8 @@
         select, input, button, textarea { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #3b4457; background: #14171f; color: #fff; font-size: 12px; margin-top: 4px; }
         input[type="file"] { padding: 5px; }
         input[type="range"] { padding: 0; margin-top: 4px; cursor: pointer; }
+        input[type="color"] { padding: 0; height: 36px; border: none; cursor: pointer; border-radius: 6px; }
+        
         button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 8px; }
         button.primary:hover { background: #e0a200; }
         
@@ -43,10 +46,12 @@
         .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
         .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
         
-        /* Lista de Hotspots para Gerenciar/Excluir */
         .hotspot-item { display: flex; justify-content: space-between; align-items: center; background: #14171f; border: 1px solid #2e3748; border-radius: 5px; padding: 6px 8px; margin-top: 6px; font-size: 11px; }
         .btn-delete { width: auto; padding: 3px 8px; background: #ef4444; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
         .btn-delete:hover { background: #dc2626; }
+
+        .color-presets { display: flex; gap: 6px; margin-top: 6px; }
+        .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
 
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
@@ -63,29 +68,33 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        .spot-circle {
+        /* FORMATOS E ESTILOS DE HOTSPOTS */
+        .spot-custom {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
             margin-left: calc(var(--spot-size) / -2) !important;
             margin-top: calc(var(--spot-size) / -2) !important;
-            border-radius: 50% !important;
-            border: 2px solid rgba(255, 255, 255, 0.95) !important;
-            background: #f5b301 !important;
+            background: var(--spot-color) !important;
             opacity: var(--spot-opacity) !important;
             box-shadow: 0 0 8px rgba(0,0,0,0.6) !important;
             cursor: pointer !important;
-            display: block !important;
-            transition: opacity 0.15s ease, background 0.15s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: opacity 0.15s ease, transform 0.15s ease !important;
+            border: 2px solid rgba(255, 255, 255, 0.95) !important;
         }
 
-        .spot-circle:hover {
-            opacity: 1 !important;
-            background: #ffffff !important;
-        }
+        .spot-custom.shape-circle { border-radius: 50% !important; }
+        .spot-custom.shape-arrow { border-radius: 50% !important; }
+        .spot-custom.shape-arrow::before { content: "➜"; color: #fff; font-size: calc(var(--spot-size) * 0.45); font-weight: bold; }
+        .spot-custom.shape-info { border-radius: 50% !important; }
+        .spot-custom.shape-info::before { content: "ℹ"; color: #fff; font-size: calc(var(--spot-size) * 0.5); font-weight: bold; font-family: serif; }
+        .spot-custom.shape-target { border-radius: 50% !important; }
+        .spot-custom.shape-target::before { content: "◎"; color: #fff; font-size: calc(var(--spot-size) * 0.55); font-weight: bold; }
 
-        .spot-circle span {
-            display: none !important;
-        }
+        .spot-custom:hover { opacity: 1 !important; transform: scale(1.1); }
+        .spot-custom span { display: none !important; }
 
         #lightbox-overlay { 
             display: none; 
@@ -105,7 +114,7 @@
             max-width: 85%; 
             max-height: 80%; 
             border-radius: 6px; 
-            border: 2px solid #f5b301; 
+            border: 2px solid var(--spot-color); 
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         #lightbox-caption { 
@@ -121,7 +130,7 @@
 <div id="sidebar">
     <div id="sidebar-header">
         <h1>Criador de Tour 360</h1>
-        <p>Painel Administrativo</p>
+        <p>Painel Administrativo Visual</p>
     </div>
 
     <div id="sidebar-content">
@@ -147,21 +156,13 @@
         <!-- Passo 2: Marcar Ponto -->
         <div class="card">
             <div class="card-title"><span class="step-number">2</span> Hotspots Interativos</div>
-            <p style="font-size: 11px; color: #8c97a8; margin: 0 0 6px 0;">Arraste para girar. Ative o botão quando for clicar no local exato.</p>
+            <p style="font-size: 11px; color: #8c97a8; margin: 0 0 6px 0;">Arraste para girar. Ative o botão quando for marcar o ponto.</p>
             <button id="addPointModeBtn" class="tool-btn" onclick="toggleAddPointMode()">📍 Ativar Modo: Marcar Ponto</button>
 
-            <!-- Lista de Hotspots do Cômodo Ativo para Exclusão -->
             <div style="margin-top: 12px;">
                 <label style="color:#e1e7f0; font-weight:bold;">Pontos criados neste ambiente:</label>
                 <div id="activeSceneHotspotsList"></div>
             </div>
-        </div>
-
-        <!-- Passo 3: Exportar Código -->
-        <div class="card">
-            <div class="card-title"><span class="step-number">3</span> Gerar Código</div>
-            <button class="primary" onclick="generateFinalCode()">Gerar Código JSON</button>
-            <textarea id="finalCodeArea" style="display:none; width: 100%; height: 110px; margin-top: 8px; background: #14171f; color: #00e676; border: 1px solid #2e3748; border-radius: 6px; padding: 6px; font-family: monospace; font-size: 11px;"></textarea>
         </div>
     </div>
 </div>
@@ -175,18 +176,18 @@
     </div>
 </div>
 
-<!-- Modal Flutuante -->
+<!-- Modal Flutuante com Formatos e Cores -->
 <div id="modal-overlay">
     <div id="modal-box">
         <h3>Configurar Ponto Interativo</h3>
         
-        <label>Tipo de Hotspot:</label>
+        <label>Tipo de Ação:</label>
         <select id="hotspotTypeSelect" onchange="toggleHotspotModalFields()">
             <option value="scene">Passagem de Ambiente (Trocar de Cômodo)</option>
             <option value="info">Foto Detalhada / Informação</option>
         </select>
 
-        <!-- Campos de Passagem -->
+        <!-- Passagem -->
         <div id="fieldSceneWrap" style="margin-top: 8px;">
             <label>Levar para qual cômodo?</label>
             <select id="modalTargetScene" onchange="updateDefaultText()"></select>
@@ -199,7 +200,7 @@
             <span id="yawInfoText" style="display:block; font-size:11px; color:#10b981; margin-top:3px;">Usando visão padrão (0°)</span>
         </div>
 
-        <!-- Campos de Foto / Info -->
+        <!-- Foto / Info -->
         <div id="fieldInfoWrap" style="display: none; margin-top: 8px;">
             <label>Título ou Legenda da Foto:</label>
             <input type="text" id="modalInfoText" placeholder="ex: Detalhe do Acabamento">
@@ -221,15 +222,33 @@
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Ajuste Visual Integrado -->
+        <!-- Seletor de Ícones e Paleta de Cores -->
         <div class="modal-section">
-            <label style="color:#f5b301; font-weight:bold; margin-top:0;">Aparência do Círculo:</label>
+            <label style="color:#f5b301; font-weight:bold; margin-top:0;">Estilo e Cor do Ícone:</label>
             
-            <label id="labelSize">Tamanho: 36px</label>
+            <label>Formato do Ícone:</label>
+            <select id="spotShapeSelect">
+                <option value="shape-circle">Círculo Simples</option>
+                <option value="shape-arrow">Círculo com Seta (➜)</option>
+                <option value="shape-info">Círculo com Info (ℹ)</option>
+                <option value="shape-target">Círculo com Alvo (◎)</option>
+            </select>
+
+            <label>Cor do Marcador:</label>
+            <input type="color" id="spotColorInput" value="#f5b301" onchange="updateSpotPreviewColor(this.value)">
+            <div class="color-presets">
+                <div class="color-dot" style="background:#f5b301;" onclick="setPresetColor('#f5b301')"></div>
+                <div class="color-dot" style="background:#3b82f6;" onclick="setPresetColor('#3b82f6')"></div>
+                <div class="color-dot" style="background:#10b981;" onclick="setPresetColor('#10b981')"></div>
+                <div class="color-dot" style="background:#ef4444;" onclick="setPresetColor('#ef4444')"></div>
+                <div class="color-dot" style="background:#ffffff;" onclick="setPresetColor('#ffffff')"></div>
+            </div>
+
+            <label id="labelSize" style="margin-top:8px;">Tamanho: 36px</label>
             <input type="range" id="inputSpotSize" min="20" max="70" value="36" oninput="updateSpotStyle()">
 
-            <label id="labelOpacity" style="margin-top:6px;">Transparência: 75%</label>
-            <input type="range" id="inputSpotOpacity" min="10" max="100" value="75" oninput="updateSpotStyle()">
+            <label id="labelOpacity" style="margin-top:6px;">Opacidade: 85%</label>
+            <input type="range" id="inputSpotOpacity" min="20" max="100" value="85" oninput="updateSpotStyle()">
         </div>
 
         <div class="modal-buttons">
@@ -264,12 +283,23 @@
     function updateSpotStyle() {
         var size = document.getElementById('inputSpotSize').value;
         var opacity = document.getElementById('inputSpotOpacity').value;
+        var color = document.getElementById('spotColorInput').value;
 
         document.getElementById('labelSize').innerText = 'Tamanho: ' + size + 'px';
-        document.getElementById('labelOpacity').innerText = 'Transparência: ' + opacity + '%';
+        document.getElementById('labelOpacity').innerText = 'Opacidade: ' + opacity + '%';
 
         document.documentElement.style.setProperty('--spot-size', size + 'px');
         document.documentElement.style.setProperty('--spot-opacity', (opacity / 100));
+        document.documentElement.style.setProperty('--spot-color', color);
+    }
+
+    function setPresetColor(hex) {
+        document.getElementById('spotColorInput').value = hex;
+        updateSpotStyle();
+    }
+
+    function updateSpotPreviewColor(hex) {
+        updateSpotStyle();
     }
 
     window.addEventListener('load', function() {
@@ -303,11 +333,8 @@
             });
     });
 
-    // Salvar e Carregar Tour em arquivo .json local
     function exportTourFile() {
-        if (Object.keys(tourData.scenes).length === 0) {
-            return alert('Nenhum ambiente foi adicionado ao tour ainda!');
-        }
+        if (Object.keys(tourData.scenes).length === 0) return alert('Nenhum ambiente adicionado ainda!');
         var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tourData, null, 4));
         var downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
@@ -395,8 +422,11 @@
 
         if (tourData.scenes[id]) return alert('Este ambiente já foi adicionado!');
         tourData.scenes[id] = { "title": title, "type": "equirectangular", "panorama": filename, "hotSpots": [] };
+        
         if (!tourData.default.firstScene) tourData.default.firstScene = id;
 
+        // Troca direta e obrigatória para o novo ambiente adicionado
+        currentSceneId = id;
         renderScenesList();
         rebuildViewer(id);
     }
@@ -415,7 +445,6 @@
         }
     }
 
-    // Renderiza a lista de pontos do ambiente ativo com opção de exclusão
     function renderActiveSceneHotspots() {
         var container = document.getElementById('activeSceneHotspotsList');
         if (!currentSceneId || !tourData.scenes[currentSceneId]) {
@@ -433,7 +462,6 @@
         spots.forEach(function(spot, index) {
             var item = document.createElement('div');
             item.className = 'hotspot-item';
-            
             var label = spot.type === 'scene' ? '🚪 ' + (spot.text || 'Passagem') : 'ℹ️ ' + (spot.text || 'Info');
             item.innerHTML = '<span>' + label + '</span><button class="btn-delete" onclick="deleteHotspot(' + index + ')">Excluir</button>';
             container.appendChild(item);
@@ -476,7 +504,9 @@
         
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
-                sp.cssClass = 'spot-circle';
+                var shapeClass = sp.shape || 'shape-circle';
+                sp.cssClass = 'spot-custom ' + shapeClass;
+
                 if (sp.type === 'info') {
                     sp.clickHandlerFunc = (function(spot) {
                         return function() {
@@ -571,10 +601,13 @@
 
     function confirmHotspot() {
         var type = document.getElementById('hotspotTypeSelect').value;
+        var selectedShape = document.getElementById('spotShapeSelect').value;
+
         var spotObj = {
             "pitch": parseFloat(tempCoords[0].toFixed(2)),
             "yaw": parseFloat(tempCoords[1].toFixed(2)),
-            "type": type
+            "type": type,
+            "shape": selectedShape
         };
 
         if (type === 'scene') {
@@ -593,13 +626,6 @@
         closeModal();
         if (addPointMode) toggleAddPointMode();
         rebuildViewer(currentSceneId);
-    }
-
-    function generateFinalCode() {
-        var area = document.getElementById('finalCodeArea');
-        area.value = JSON.stringify(tourData, null, 4);
-        area.style.display = 'block';
-        alert('Código gerado no campo abaixo!');
     }
 </script>
 </body>
