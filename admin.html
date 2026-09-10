@@ -47,7 +47,11 @@
         .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
         
         .hotspot-item { display: flex; justify-content: space-between; align-items: center; background: #14171f; border: 1px solid #2e3748; border-radius: 5px; padding: 6px 8px; margin-top: 6px; font-size: 11px; }
+        .item-actions { display: flex; gap: 4px; }
+        .btn-edit { width: auto; padding: 3px 8px; background: #3b82f6; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
+        .btn-edit:hover { background: #2563eb; }
         .btn-delete { width: auto; padding: 3px 8px; background: #ef4444; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
+        .btn-delete:hover { background: #dc2626; }
 
         .color-presets { display: flex; gap: 6px; margin-top: 6px; }
         .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
@@ -58,7 +62,6 @@
         .icon-choice-preview { font-size: 22px; display: block; margin-bottom: 4px; }
         .icon-choice-label { font-size: 10px; color: #8c97a8; }
 
-        /* Bússola Visual Interativa */
         #dial-container { width: 120px; height: 120px; border-radius: 50%; background: #14171f; border: 2px dashed #f5b301; margin: 10px auto; position: relative; cursor: crosshair; display: flex; align-items: center; justify-content: center; user-select: none; }
         #dial-needle { width: 4px; height: 46px; background: #f5b301; position: absolute; bottom: 50%; transform-origin: bottom center; border-radius: 2px; pointer-events: none; }
         #dial-needle::after { content: ''; position: absolute; top: -6px; left: -5px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 9px solid #f5b301; }
@@ -79,9 +82,6 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* =======================================================
-           ESTILIZAÇÃO NATIVA DOS HOTSPOTS (RIGOROSAMENTE VISÍVEIS)
-           ======================================================= */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -95,16 +95,14 @@
             background-color: var(--spot-color) !important;
             border: 2px solid rgba(255, 255, 255, 0.95) !important;
             box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.4) !important;
-            transition: none !important; /* Sem delay no arrasto */
+            transition: none !important;
             position: absolute !important;
         }
 
-        /* VARIAÇÃO 1: CÍRCULO NATIVO COM BRILHO 3D */
         .pnlm-hotspot-base.shape-circle {
             background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--spot-color) 60%, rgba(0,0,0,0.6) 100%) !important;
         }
 
-        /* VARIAÇÃO 2: SETA NO CHÃO (PROJETADA EM PERSPECTIVA 3D) */
         .pnlm-hotspot-base.shape-arrow {
             background-color: transparent !important;
             border: none !important;
@@ -126,7 +124,6 @@
             filter: drop-shadow(0 4px 5px rgba(0,0,0,0.85)) drop-shadow(0 0 2px #fff);
         }
 
-        /* VARIAÇÃO 3: INFORMAÇÃO 3D */
         .pnlm-hotspot-base.shape-info {
             background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--spot-color) 60%, rgba(0,0,0,0.6) 100%) !important;
             display: flex !important;
@@ -144,12 +141,10 @@
             margin-top: -2px;
         }
 
-        /* Hover: ganho de contraste imediato */
         .pnlm-hotspot-base:hover {
             opacity: 1 !important;
         }
 
-        /* BALÃO DE TEXTO DESCRITIVO AO PASSAR O MOUSE (NATIVO E ROBUSTO) */
         .pnlm-tooltip span {
             display: none !important;
         }
@@ -171,7 +166,6 @@
             z-index: 999 !important;
         }
 
-        /* LIGHTBOX */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -252,7 +246,7 @@
 <!-- Modal Flutuante com Seleção Visual e Bússola -->
 <div id="modal-overlay">
     <div id="modal-box">
-        <h3>Configurar Ponto Interativo</h3>
+        <h3 id="modalTitleText">Configurar Ponto Interativo</h3>
         
         <label>Tipo de Ação:</label>
         <select id="hotspotTypeSelect" onchange="toggleHotspotModalFields()">
@@ -366,6 +360,7 @@
     var tempTargetYaw = 0;
     var currentSelectedShape = "shape-arrow";
     var visualArrowAngle = 0;
+    var editingHotspotIndex = null; // null = novo ponto; número = editando ponto existente
     var addPointMode = false;
     var isDragging = false;
     var isDialDragging = false;
@@ -406,7 +401,7 @@
     function selectShape(shape, cardElem) {
         currentSelectedShape = shape;
         document.querySelectorAll('.icon-choice-card').forEach(function(c) { c.classList.remove('active'); });
-        cardElem.classList.add('active');
+        if (cardElem) cardElem.classList.add('active');
         document.getElementById('compassDirectionWrap').style.display = (shape === 'shape-arrow') ? 'block' : 'none';
     }
 
@@ -588,7 +583,14 @@
             var item = document.createElement('div');
             item.className = 'hotspot-item';
             var label = spot.type === 'scene' ? '🚪 ' + (spot.text || 'Passagem') : 'ℹ️ ' + (spot.text || 'Info');
-            item.innerHTML = '<span>' + label + '</span><button class="btn-delete" onclick="deleteHotspot(' + index + ')">Excluir</button>';
+            
+            var actions = document.createElement('div');
+            actions.className = 'item-actions';
+            actions.innerHTML = '<button class="btn-edit" onclick="openEditHotspotModal(' + index + ')">Editar</button>' +
+                                '<button class="btn-delete" onclick="deleteHotspot(' + index + ')">Excluir</button>';
+
+            item.innerHTML = '<span>' + label + '</span>';
+            item.appendChild(actions);
             container.appendChild(item);
         });
     }
@@ -627,16 +629,12 @@
 
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
         
-        // Aplica as classes nativas nos pontos
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
                 var shapeClass = sp.shape || 'shape-arrow';
                 sp.cssClass = shapeClass;
 
-                // Armazena a rotação para aplicar via estilo nativo
                 if (sp.rotation) {
-                    var angleRule = '--arrow-angle: ' + sp.rotation + 'deg;';
-                    // Injetamos a variável de rotação diretamente
                     sp.createTooltipFunc = function(hotSpotDiv, args) {
                         hotSpotDiv.style.setProperty('--arrow-angle', (args.rotation || 0) + 'deg');
                         if (args.text) {
@@ -683,6 +681,8 @@
                     tempCoords = coords;
                     tempTargetYaw = 0;
                     visualArrowAngle = 0;
+                    editingHotspotIndex = null;
+                    document.getElementById('modalTitleText').innerText = 'Adicionar Ponto Interativo';
                     document.getElementById('dial-needle').style.transform = 'rotate(0deg)';
                     document.getElementById('yawInfoText').innerText = 'Usando visão padrão (0°)';
                     openModal();
@@ -691,7 +691,7 @@
         };
     }
 
-    function openModal() {
+    function populateModalScenesSelect() {
         var otherScenes = Object.keys(tourData.scenes).filter(function(id) { return id !== currentSceneId; });
         var select = document.getElementById('modalTargetScene');
         select.innerHTML = '';
@@ -701,7 +701,11 @@
             opt.text = tourData.scenes[id].title;
             select.appendChild(opt);
         });
+        return otherScenes;
+    }
 
+    function openModal() {
+        var otherScenes = populateModalScenesSelect();
         document.getElementById('hotspotTypeSelect').value = otherScenes.length > 0 ? 'scene' : 'info';
         toggleHotspotModalFields();
         updateDefaultText();
@@ -711,10 +715,68 @@
         document.getElementById('modalInfoImageSelect').value = '';
         document.getElementById('modalLocalFileInput').value = '';
         document.getElementById('imagePreviewContainer').style.display = 'none';
+
+        selectShapeByName('shape-arrow');
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
+    // Abertura do modal em modo de edição com dados existentes
+    function openEditHotspotModal(index) {
+        if (!currentSceneId || !tourData.scenes[currentSceneId]) return;
+        var spot = tourData.scenes[currentSceneId].hotSpots[index];
+        if (!spot) return;
+
+        editingHotspotIndex = index;
+        tempCoords = [spot.pitch, spot.yaw];
+        tempTargetYaw = spot.targetYaw || 0;
+        visualArrowAngle = spot.rotation || 0;
+
+        document.getElementById('modalTitleText').innerText = 'Editar Ponto Interativo';
+        populateModalScenesSelect();
+
+        document.getElementById('hotspotTypeSelect').value = spot.type || 'scene';
+        toggleHotspotModalFields();
+
+        if (spot.type === 'scene') {
+            document.getElementById('modalTargetScene').value = spot.sceneId || '';
+            document.getElementById('modalText').value = spot.text || '';
+            document.getElementById('yawInfoText').innerText = tempTargetYaw ? '✓ Alinhado em: ' + tempTargetYaw + '°' : 'Usando visão padrão (0°)';
+        } else {
+            document.getElementById('modalInfoText').value = spot.text || '';
+            document.getElementById('modalInfoUrl').value = spot.URL || '';
+            var imgData = spot.image || '';
+            document.getElementById('modalFinalImageData').value = imgData;
+            if (imgData) {
+                document.getElementById('imagePreview').src = imgData;
+                document.getElementById('imagePreviewContainer').style.display = 'block';
+            } else {
+                document.getElementById('imagePreviewContainer').style.display = 'none';
+            }
+        }
+
+        var shape = spot.shape || 'shape-arrow';
+        selectShapeByName(shape);
+
+        document.getElementById('dial-needle').style.transform = 'rotate(' + visualArrowAngle + 'deg)';
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+
+    function selectShapeByName(shape) {
+        currentSelectedShape = shape;
+        var cards = document.querySelectorAll('.icon-choice-card');
+        cards.forEach(function(c) {
+            var onclickStr = c.getAttribute('onclick') || '';
+            if (onclickStr.indexOf(shape) !== -1) {
+                c.classList.add('active');
+            } else {
+                c.classList.remove('active');
+            }
+        });
+        document.getElementById('compassDirectionWrap').style.display = (shape === 'shape-arrow') ? 'block' : 'none';
+    }
+
     function updateDefaultText() {
+        if (editingHotspotIndex !== null) return;
         var select = document.getElementById('modalTargetScene');
         var targetTitle = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '';
         document.getElementById('modalText').value = targetTitle ? 'Ir para ' + targetTitle : '';
@@ -739,6 +801,7 @@
     function closeModal() {
         document.getElementById('modal-overlay').style.display = 'none';
         tempCoords = null;
+        editingHotspotIndex = null;
         if (viewer.getScene() !== currentSceneId) viewer.loadScene(currentSceneId);
     }
 
@@ -765,7 +828,14 @@
             if (linkUrl) spotObj.URL = linkUrl;
         }
 
-        tourData.scenes[currentSceneId].hotSpots.push(spotObj);
+        if (editingHotspotIndex !== null) {
+            // Atualiza o hotspot existente
+            tourData.scenes[currentSceneId].hotSpots[editingHotspotIndex] = spotObj;
+        } else {
+            // Cria um novo hotspot
+            tourData.scenes[currentSceneId].hotSpots.push(spotObj);
+        }
+
         closeModal();
         if (addPointMode) toggleAddPointMode();
         rebuildViewer(currentSceneId);
