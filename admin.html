@@ -8,7 +8,7 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <style id="custom-hotspot-style">
         :root {
-            --spot-size: 36px;
+            --spot-size: 40px;
             --spot-opacity: 0.85;
             --spot-color: #f5b301;
         }
@@ -33,7 +33,7 @@
         input[type="range"] { padding: 0; margin-top: 4px; cursor: pointer; }
         input[type="color"] { padding: 0; height: 36px; border: none; cursor: pointer; border-radius: 6px; }
         
-        button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: background 0.15s; margin-top: 8px; }
         button.primary:hover { background: #e0a200; }
         
         button.secondary { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; font-weight: 500; margin-top: 6px; }
@@ -53,11 +53,18 @@
         .color-presets { display: flex; gap: 6px; margin-top: 6px; }
         .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
 
+        /* Grade de seleção visual dos ícones */
+        .icon-selector-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 6px; }
+        .icon-choice-card { background: #14171f; border: 1px solid #3b4457; border-radius: 6px; padding: 8px 4px; text-align: center; cursor: pointer; }
+        .icon-choice-card.active { border-color: #f5b301; background: #262c3a; }
+        .icon-choice-preview { font-size: 20px; display: block; margin-bottom: 4px; }
+        .icon-choice-label { font-size: 10px; color: #8c97a8; }
+
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
-        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 400px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+        #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 420px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
         .modal-section { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 10px; margin-top: 10px; }
         .modal-buttons { display: flex; gap: 8px; margin-top: 14px; }
@@ -68,33 +75,63 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* FORMATOS E ESTILOS DE HOTSPOTS */
-        .spot-custom {
+        /* HOTSPOTS 3D - SEM TRANSITION PARA ELIMINAR DELAY E ARRASTO */
+        .spot-custom-3d {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
             margin-left: calc(var(--spot-size) / -2) !important;
             margin-top: calc(var(--spot-size) / -2) !important;
-            background: var(--spot-color) !important;
             opacity: var(--spot-opacity) !important;
-            box-shadow: 0 0 8px rgba(0,0,0,0.6) !important;
             cursor: pointer !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            transition: opacity 0.15s ease, transform 0.15s ease !important;
-            border: 2px solid rgba(255, 255, 255, 0.95) !important;
+            border-radius: 50% !important;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 60%), var(--spot-color) !important;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.4) !important;
+            border: 2px solid rgba(255,255,255,0.9) !important;
+            position: relative;
+            transition: none !important; /* Zero transition para travar na cena 3D */
         }
 
-        .spot-custom.shape-circle { border-radius: 50% !important; }
-        .spot-custom.shape-arrow { border-radius: 50% !important; }
-        .spot-custom.shape-arrow::before { content: "➜"; color: #fff; font-size: calc(var(--spot-size) * 0.45); font-weight: bold; }
-        .spot-custom.shape-info { border-radius: 50% !important; }
-        .spot-custom.shape-info::before { content: "ℹ"; color: #fff; font-size: calc(var(--spot-size) * 0.5); font-weight: bold; font-family: serif; }
-        .spot-custom.shape-target { border-radius: 50% !important; }
-        .spot-custom.shape-target::before { content: "◎"; color: #fff; font-size: calc(var(--spot-size) * 0.55); font-weight: bold; }
+        .spot-inner-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
 
-        .spot-custom:hover { opacity: 1 !important; transform: scale(1.1); }
-        .spot-custom span { display: none !important; }
+        .spot-inner-icon svg {
+            width: 58%;
+            height: 58%;
+            fill: #ffffff;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.6));
+        }
+
+        /* Tooltip descritivo suave ao passar o mouse */
+        .spot-tooltip-text {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 21, 27, 0.95);
+            color: #fff;
+            padding: 5px 9px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            border: 1px solid var(--spot-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            pointer-events: none;
+            z-index: 250;
+        }
+
+        .spot-custom-3d:hover .spot-tooltip-text {
+            display: block !important;
+        }
 
         #lightbox-overlay { 
             display: none; 
@@ -176,7 +213,7 @@
     </div>
 </div>
 
-<!-- Modal Flutuante com Formatos e Cores -->
+<!-- Modal Flutuante com Seleção Visual de Ícones -->
 <div id="modal-overlay">
     <div id="modal-box">
         <h3>Configurar Ponto Interativo</h3>
@@ -192,8 +229,8 @@
             <label>Levar para qual cômodo?</label>
             <select id="modalTargetScene" onchange="updateDefaultText()"></select>
 
-            <label>Texto de identificação:</label>
-            <input type="text" id="modalText" placeholder="ex: Ir para o Corredor">
+            <label>Texto descritivo (ao passar o cursor):</label>
+            <input type="text" id="modalText" placeholder="ex: Ir para a Sala">
 
             <label>Direção da visão ao chegar:</label>
             <button type="button" class="btn-preview" onclick="startVisualAlign()">🎯 Alinhar visão no destino</button>
@@ -202,7 +239,7 @@
 
         <!-- Foto / Info -->
         <div id="fieldInfoWrap" style="display: none; margin-top: 8px;">
-            <label>Título ou Legenda da Foto:</label>
+            <label>Texto descritivo / Título da Foto:</label>
             <input type="text" id="modalInfoText" placeholder="ex: Detalhe do Acabamento">
 
             <label>Foto do Repositório:</label>
@@ -222,20 +259,37 @@
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Seletor de Ícones e Paleta de Cores -->
+        <!-- Seletor Visual de Ícones 3D -->
         <div class="modal-section">
-            <label style="color:#f5b301; font-weight:bold; margin-top:0;">Estilo e Cor do Ícone:</label>
+            <label style="color:#f5b301; font-weight:bold; margin-top:0;">Escolha o Ícone 3D:</label>
             
-            <label>Formato do Ícone:</label>
-            <select id="spotShapeSelect">
-                <option value="shape-circle">Círculo Simples</option>
-                <option value="shape-arrow">Círculo com Seta (➜)</option>
-                <option value="shape-info">Círculo com Info (ℹ)</option>
-                <option value="shape-target">Círculo com Alvo (◎)</option>
-            </select>
+            <div class="icon-selector-grid">
+                <div class="icon-choice-card active" onclick="selectShape('circle', this)">
+                    <span class="icon-choice-preview">⚪</span>
+                    <span class="icon-choice-label">Círculo 3D</span>
+                </div>
+                <div class="icon-choice-card" onclick="selectShape('arrow', this)">
+                    <span class="icon-choice-preview">➜</span>
+                    <span class="icon-choice-label">Seta 3D</span>
+                </div>
+                <div class="icon-choice-card" onclick="selectShape('info', this)">
+                    <span class="icon-choice-preview">ℹ️</span>
+                    <span class="icon-choice-label">Info 3D</span>
+                </div>
+                <div class="icon-choice-card" onclick="selectShape('pin', this)">
+                    <span class="icon-choice-preview">📍</span>
+                    <span class="icon-choice-label">Marcador</span>
+                </div>
+            </div>
 
-            <label>Cor do Marcador:</label>
-            <input type="color" id="spotColorInput" value="#f5b301" onchange="updateSpotPreviewColor(this.value)">
+            <!-- Direção da seta (se aplicável) -->
+            <div id="arrowAngleWrap" style="display: none; margin-top: 8px;">
+                <label id="labelArrowRotation">Direção da Seta: 0° (Frente)</label>
+                <input type="range" id="inputArrowRotation" min="0" max="360" value="0" oninput="updateArrowAngleText(this.value)">
+            </div>
+
+            <label style="margin-top:10px;">Cor do Marcador:</label>
+            <input type="color" id="spotColorInput" value="#f5b301" onchange="updateSpotStyle()">
             <div class="color-presets">
                 <div class="color-dot" style="background:#f5b301;" onclick="setPresetColor('#f5b301')"></div>
                 <div class="color-dot" style="background:#3b82f6;" onclick="setPresetColor('#3b82f6')"></div>
@@ -244,8 +298,8 @@
                 <div class="color-dot" style="background:#ffffff;" onclick="setPresetColor('#ffffff')"></div>
             </div>
 
-            <label id="labelSize" style="margin-top:8px;">Tamanho: 36px</label>
-            <input type="range" id="inputSpotSize" min="20" max="70" value="36" oninput="updateSpotStyle()">
+            <label id="labelSize" style="margin-top:8px;">Tamanho: 40px</label>
+            <input type="range" id="inputSpotSize" min="24" max="70" value="40" oninput="updateSpotStyle()">
 
             <label id="labelOpacity" style="margin-top:6px;">Opacidade: 85%</label>
             <input type="range" id="inputSpotOpacity" min="20" max="100" value="85" oninput="updateSpotStyle()">
@@ -275,10 +329,30 @@
     var currentSceneId = "";
     var tempCoords = null;
     var tempTargetYaw = 0;
+    var currentSelectedShape = "circle";
     var addPointMode = false;
     var isDragging = false;
     var startX = 0, startY = 0;
     var availableRepoImages = [];
+
+    // Ícones vetoriais SVG nítidos para 3D
+    var svgIcons = {
+        circle: '',
+        arrow: '<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>',
+        info: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>',
+        pin: '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'
+    };
+
+    function selectShape(shape, cardElem) {
+        currentSelectedShape = shape;
+        document.querySelectorAll('.icon-choice-card').forEach(function(c) { c.classList.remove('active'); });
+        cardElem.classList.add('active');
+        document.getElementById('arrowAngleWrap').style.display = (shape === 'arrow') ? 'block' : 'none';
+    }
+
+    function updateArrowAngleText(val) {
+        document.getElementById('labelArrowRotation').innerText = 'Direção da Seta: ' + val + '°';
+    }
 
     function updateSpotStyle() {
         var size = document.getElementById('inputSpotSize').value;
@@ -295,10 +369,6 @@
 
     function setPresetColor(hex) {
         document.getElementById('spotColorInput').value = hex;
-        updateSpotStyle();
-    }
-
-    function updateSpotPreviewColor(hex) {
         updateSpotStyle();
     }
 
@@ -425,7 +495,6 @@
         
         if (!tourData.default.firstScene) tourData.default.firstScene = id;
 
-        // Troca direta e obrigatória para o novo ambiente adicionado
         currentSceneId = id;
         renderScenesList();
         rebuildViewer(id);
@@ -494,6 +563,29 @@
         document.getElementById('lightbox-overlay').style.display = 'none';
     }
 
+    // Renderizador visual dos elementos sem delay
+    function customHotspotRenderer(hotSpotDiv, args) {
+        hotSpotDiv.classList.add('spot-custom-3d');
+        
+        var iconWrap = document.createElement('div');
+        iconWrap.className = 'spot-inner-icon';
+        
+        var shape = args.shape || 'circle';
+        iconWrap.innerHTML = svgIcons[shape] || '';
+        
+        if (shape === 'arrow' && args.rotation) {
+            iconWrap.style.transform = 'rotate(' + args.rotation + 'deg)';
+        }
+        hotSpotDiv.appendChild(iconWrap);
+
+        if (args.text && args.text.trim() !== "") {
+            var tooltip = document.createElement('div');
+            tooltip.className = 'spot-tooltip-text';
+            tooltip.innerText = args.text;
+            hotSpotDiv.appendChild(tooltip);
+        }
+    }
+
     function rebuildViewer(targetSceneId) {
         currentSceneId = targetSceneId;
         renderScenesList();
@@ -504,8 +596,12 @@
         
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
-                var shapeClass = sp.shape || 'shape-circle';
-                sp.cssClass = 'spot-custom ' + shapeClass;
+                sp.createTooltipFunc = customHotspotRenderer;
+                sp.createTooltipArgs = {
+                    text: sp.text || '',
+                    shape: sp.shape || 'circle',
+                    rotation: sp.rotation || 0
+                };
 
                 if (sp.type === 'info') {
                     sp.clickHandlerFunc = (function(spot) {
@@ -601,13 +697,14 @@
 
     function confirmHotspot() {
         var type = document.getElementById('hotspotTypeSelect').value;
-        var selectedShape = document.getElementById('spotShapeSelect').value;
+        var rotationVal = (currentSelectedShape === 'arrow') ? parseInt(document.getElementById('inputArrowRotation').value, 10) : 0;
 
         var spotObj = {
             "pitch": parseFloat(tempCoords[0].toFixed(2)),
             "yaw": parseFloat(tempCoords[1].toFixed(2)),
             "type": type,
-            "shape": selectedShape
+            "shape": currentSelectedShape,
+            "rotation": rotationVal
         };
 
         if (type === 'scene') {
