@@ -8,8 +8,8 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <style id="custom-hotspot-style">
         :root {
-            --spot-size: 44px;
-            --spot-opacity: 0.85;
+            --spot-size: 40px;
+            --spot-opacity: 0.8;
             --spot-color: #f5b301;
         }
 
@@ -82,6 +82,9 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
+        /* =======================================================
+           ESTILO DO CÍRCULO 2D ORIGINAL (TRAVADO E NATIVO)
+           ======================================================= */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -89,62 +92,59 @@
             margin-top: calc(var(--spot-size) / -2) !important;
             opacity: var(--spot-opacity) !important;
             cursor: pointer !important;
-            display: block !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             visibility: visible !important;
             border-radius: 50% !important;
-            background-color: var(--spot-color) !important;
+            background: var(--spot-color) !important;
             border: 2px solid rgba(255, 255, 255, 0.95) !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.4) !important;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.6) !important;
             transition: none !important;
-            position: absolute !important;
-        }
-
-        .pnlm-hotspot-base.shape-circle {
-            background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--spot-color) 60%, rgba(0,0,0,0.6) 100%) !important;
-        }
-
-        .pnlm-hotspot-base.shape-arrow {
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            transform-style: preserve-3d !important;
-        }
-        .pnlm-hotspot-base.shape-arrow::before {
-            content: '';
-            width: 100%;
-            height: 100%;
-            display: block;
-            background: var(--spot-color);
-            clip-path: polygon(50% 0%, 15% 100%, 50% 75%, 85% 100%);
-            border-radius: 3px;
-            transform: perspective(200px) rotateX(60deg) rotate(var(--arrow-angle, 0deg));
-            filter: drop-shadow(0 4px 5px rgba(0,0,0,0.85)) drop-shadow(0 0 2px #fff);
-        }
-
-        .pnlm-hotspot-base.shape-info {
-            background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--spot-color) 60%, rgba(0,0,0,0.6) 100%) !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        .pnlm-hotspot-base.shape-info::after {
-            content: "ℹ";
-            color: #fff;
-            font-size: calc(var(--spot-size) * 0.55);
-            font-weight: bold;
-            font-family: serif;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-            display: block;
-            margin-top: -2px;
         }
 
         .pnlm-hotspot-base:hover {
             opacity: 1 !important;
+            background: #ffffff !important;
         }
 
+        /* Ícone interno da Seta (gira acompanhando o tour) */
+        .spot-arrow-icon {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            transform-origin: center center;
+        }
+
+        .spot-arrow-icon::before {
+            content: "▲";
+            color: #ffffff;
+            font-size: calc(var(--spot-size) * 0.45);
+            line-height: 1;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .pnlm-hotspot-base:hover .spot-arrow-icon::before {
+            color: var(--spot-color);
+        }
+
+        /* Ícone interno de Info 2D */
+        .pnlm-hotspot-base.shape-info::after {
+            content: "ℹ";
+            color: #ffffff;
+            font-size: calc(var(--spot-size) * 0.55);
+            font-weight: bold;
+            font-family: serif;
+            line-height: 1;
+        }
+        .pnlm-hotspot-base.shape-info:hover::after {
+            color: var(--spot-color);
+        }
+
+        /* TOOLTIP REFINADO NO HOVER */
         .pnlm-tooltip span {
             display: none !important;
         }
@@ -166,6 +166,7 @@
             z-index: 999 !important;
         }
 
+        /* LIGHTBOX */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -289,28 +290,28 @@
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Seletor Visual de Formatos 3D -->
+        <!-- Seletor Visual de Formatos 2D -->
         <div class="modal-section">
             <label style="color:#f5b301; font-weight:bold; margin-top:0;">Formato do Ícone:</label>
             
             <div class="icon-selector-grid">
                 <div class="icon-choice-card" onclick="selectShape('shape-circle', this)">
                     <span class="icon-choice-preview">⚪</span>
-                    <span class="icon-choice-label">Círculo 3D</span>
+                    <span class="icon-choice-label">Círculo Limpo</span>
                 </div>
                 <div class="icon-choice-card active" onclick="selectShape('shape-arrow', this)">
                     <span class="icon-choice-preview">▲</span>
-                    <span class="icon-choice-label">Seta no Chão</span>
+                    <span class="icon-choice-label">Círculo c/ Seta</span>
                 </div>
                 <div class="icon-choice-card" onclick="selectShape('shape-info', this)">
                     <span class="icon-choice-preview">ℹ️</span>
-                    <span class="icon-choice-label">Info 3D</span>
+                    <span class="icon-choice-label">Círculo c/ Info</span>
                 </div>
             </div>
 
             <!-- Bússola Visual Interativa para Direção da Seta -->
             <div id="compassDirectionWrap" style="margin-top: 10px;">
-                <label style="text-align: center; color: #fff;">🧭 Aponte a direção da seta (clique ou arraste na bússola):</label>
+                <label style="text-align: center; color: #fff;">🧭 Aponte a direção absoluta da seta:</label>
                 <div id="dial-container" onmousedown="startDialDrag(event)">
                     <div id="dial-needle"></div>
                     <div id="dial-center"></div>
@@ -327,11 +328,11 @@
                 <div class="color-dot" style="background:#ffffff;" onclick="setPresetColor('#ffffff')"></div>
             </div>
 
-            <label id="labelSize" style="margin-top:8px;">Tamanho: 44px</label>
-            <input type="range" id="inputSpotSize" min="28" max="75" value="44" oninput="updateSpotStyle()">
+            <label id="labelSize" style="margin-top:8px;">Tamanho: 40px</label>
+            <input type="range" id="inputSpotSize" min="28" max="75" value="40" oninput="updateSpotStyle()">
 
-            <label id="labelOpacity" style="margin-top:6px;">Opacidade: 85%</label>
-            <input type="range" id="inputSpotOpacity" min="20" max="100" value="85" oninput="updateSpotStyle()">
+            <label id="labelOpacity" style="margin-top:6px;">Opacidade: 80%</label>
+            <input type="range" id="inputSpotOpacity" min="20" max="100" value="80" oninput="updateSpotStyle()">
         </div>
 
         <div class="modal-buttons">
@@ -360,12 +361,13 @@
     var tempTargetYaw = 0;
     var currentSelectedShape = "shape-arrow";
     var visualArrowAngle = 0;
-    var editingHotspotIndex = null; // null = novo ponto; número = editando ponto existente
+    var editingHotspotIndex = null;
     var addPointMode = false;
     var isDragging = false;
     var isDialDragging = false;
     var startX = 0, startY = 0;
     var availableRepoImages = [];
+    var arrowNodes = []; // Armazena referências dos elementos de seta para girar com o tour
 
     // Bússola Visual
     function startDialDrag(e) {
@@ -621,10 +623,25 @@
         document.getElementById('lightbox-overlay').style.display = 'none';
     }
 
+    // Animação contínua da rotação da seta para acompanhar o giro da câmera
+    function updateArrowsRotation() {
+        if (!viewer) return;
+        var currentYaw = viewer.getYaw();
+        for (var i = 0; i < arrowNodes.length; i++) {
+            var item = arrowNodes[i];
+            if (item.elem) {
+                var relativeAngle = item.baseAngle - currentYaw;
+                item.elem.style.transform = 'rotate(' + relativeAngle + 'deg)';
+            }
+        }
+        requestAnimationFrame(updateArrowsRotation);
+    }
+
     function rebuildViewer(targetSceneId) {
         currentSceneId = targetSceneId;
         renderScenesList();
         renderActiveSceneHotspots();
+        arrowNodes = [];
         if (viewer) { viewer.destroy(); viewer = null; }
 
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
@@ -634,17 +651,25 @@
                 var shapeClass = sp.shape || 'shape-arrow';
                 sp.cssClass = shapeClass;
 
-                if (sp.rotation) {
-                    sp.createTooltipFunc = function(hotSpotDiv, args) {
-                        hotSpotDiv.style.setProperty('--arrow-angle', (args.rotation || 0) + 'deg');
-                        if (args.text) {
-                            var span = document.createElement('span');
-                            span.innerText = args.text;
-                            hotSpotDiv.appendChild(span);
-                        }
-                    };
-                    sp.createTooltipArgs = { rotation: sp.rotation, text: sp.text || '' };
-                }
+                // Renderiza o interior do hotspot de forma 100% nativa
+                sp.createTooltipFunc = function(hotSpotDiv, args) {
+                    if (args.shape === 'shape-arrow') {
+                        var iconDiv = document.createElement('div');
+                        iconDiv.className = 'spot-arrow-icon';
+                        hotSpotDiv.appendChild(iconDiv);
+                        arrowNodes.push({ elem: iconDiv, baseAngle: args.rotation || 0 });
+                    }
+                    if (args.text) {
+                        var span = document.createElement('span');
+                        span.innerText = args.text;
+                        hotSpotDiv.appendChild(span);
+                    }
+                };
+                sp.createTooltipArgs = {
+                    shape: shapeClass,
+                    rotation: sp.rotation || 0,
+                    text: sp.text || ''
+                };
 
                 if (sp.type === 'info') {
                     sp.clickHandlerFunc = (function(spot) {
@@ -720,7 +745,6 @@
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
-    // Abertura do modal em modo de edição com dados existentes
     function openEditHotspotModal(index) {
         if (!currentSceneId || !tourData.scenes[currentSceneId]) return;
         var spot = tourData.scenes[currentSceneId].hotSpots[index];
@@ -829,10 +853,8 @@
         }
 
         if (editingHotspotIndex !== null) {
-            // Atualiza o hotspot existente
             tourData.scenes[currentSceneId].hotSpots[editingHotspotIndex] = spotObj;
         } else {
-            // Cria um novo hotspot
             tourData.scenes[currentSceneId].hotSpots.push(spotObj);
         }
 
@@ -840,6 +862,9 @@
         if (addPointMode) toggleAddPointMode();
         rebuildViewer(currentSceneId);
     }
+
+    // Inicia o loop para sincronizar a rotação das setas com a rotação da câmera
+    requestAnimationFrame(updateArrowsRotation);
 </script>
 </body>
 </html>
