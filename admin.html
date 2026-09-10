@@ -8,8 +8,8 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <style id="custom-hotspot-style">
         :root {
-            --spot-size: 40px;
-            --spot-opacity: 0.85;
+            --spot-size: 46px;
+            --spot-opacity: 0.88;
             --spot-color: #f5b301;
         }
 
@@ -33,7 +33,7 @@
         input[type="range"] { padding: 0; margin-top: 4px; cursor: pointer; }
         input[type="color"] { padding: 0; height: 36px; border: none; cursor: pointer; border-radius: 6px; }
         
-        button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; transition: background 0.15s; margin-top: 8px; }
+        button.primary { background: #f5b301; color: #000; font-weight: bold; border: none; cursor: pointer; margin-top: 8px; }
         button.primary:hover { background: #e0a200; }
         
         button.secondary { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; font-weight: 500; margin-top: 6px; }
@@ -48,17 +48,21 @@
         
         .hotspot-item { display: flex; justify-content: space-between; align-items: center; background: #14171f; border: 1px solid #2e3748; border-radius: 5px; padding: 6px 8px; margin-top: 6px; font-size: 11px; }
         .btn-delete { width: auto; padding: 3px 8px; background: #ef4444; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
-        .btn-delete:hover { background: #dc2626; }
 
         .color-presets { display: flex; gap: 6px; margin-top: 6px; }
         .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
 
-        /* Grade de seleção visual dos ícones */
-        .icon-selector-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 6px; }
+        .icon-selector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
         .icon-choice-card { background: #14171f; border: 1px solid #3b4457; border-radius: 6px; padding: 8px 4px; text-align: center; cursor: pointer; }
-        .icon-choice-card.active { border-color: #f5b301; background: #262c3a; }
-        .icon-choice-preview { font-size: 20px; display: block; margin-bottom: 4px; }
+        .icon-choice-card.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
+        .icon-choice-preview { font-size: 22px; display: block; margin-bottom: 4px; }
         .icon-choice-label { font-size: 10px; color: #8c97a8; }
+
+        /* Bússola Visual Interativa */
+        #dial-container { width: 130px; height: 130px; border-radius: 50%; background: #14171f; border: 2px dashed #f5b301; margin: 10px auto; position: relative; cursor: crosshair; display: flex; align-items: center; justify-content: center; user-select: none; }
+        #dial-needle { width: 4px; height: 50px; background: #f5b301; position: absolute; bottom: 50%; transform-origin: bottom center; border-radius: 2px; pointer-events: none; }
+        #dial-needle::after { content: ''; position: absolute; top: -6px; left: -5px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 9px solid #f5b301; }
+        #dial-center { width: 12px; height: 12px; border-radius: 50%; background: #fff; z-index: 2; pointer-events: none; }
 
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
@@ -75,8 +79,8 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* HOTSPOTS 3D - SEM TRANSITION PARA ELIMINAR DELAY E ARRASTO */
-        .spot-custom-3d {
+        /* BASE DO MARCADOR NATIVO - RIGIDAMENTE TRAVADO (SEM DELAY) */
+        .spot-node {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
             margin-left: calc(var(--spot-size) / -2) !important;
@@ -86,32 +90,67 @@
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            border-radius: 50% !important;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 60%), var(--spot-color) !important;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -3px 6px rgba(0,0,0,0.4) !important;
-            border: 2px solid rgba(255,255,255,0.9) !important;
+            background: transparent !important;
+            border: none !important;
             position: relative;
-            transition: none !important; /* Zero transition para travar na cena 3D */
+            transition: none !important; /* Elimina qualquer arrasto ou delay */
         }
 
-        .spot-inner-icon {
+        /* FORMATO 1: CÍRCULO 3D COM BRILHO ESFÉRICO */
+        .spot-node.shape-circle .spot-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--spot-color) 60%, rgba(0,0,0,0.7) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.65), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+        }
+
+        /* FORMATO 2: SETA 3D PROJETADA PARALELA AO CHÃO */
+        .spot-node.shape-floor-arrow {
+            perspective: 250px;
+        }
+        .spot-node.shape-floor-arrow .spot-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            transform: rotateX(60deg); /* Inclinação de piso */
+            background: radial-gradient(circle, rgba(0,0,0,0.5) 0%, transparent 70%);
+        }
+        .spot-node.shape-floor-arrow svg {
+            width: 90%;
+            height: 90%;
+            fill: var(--spot-color);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.85)) drop-shadow(0 0 4px #ffffff);
+            transform-origin: center center;
+        }
+
+        /* FORMATO 3: BOTÃO 3D DE INFORMAÇÃO */
+        .spot-node.shape-info .spot-inner {
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--spot-color) 60%, rgba(0,0,0,0.7) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .spot-node.shape-info .spot-inner::after {
+            content: "ℹ";
+            color: #fff;
+            font-size: calc(var(--spot-size) * 0.55);
+            font-weight: bold;
+            font-family: serif;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
 
-        .spot-inner-icon svg {
-            width: 58%;
-            height: 58%;
-            fill: #ffffff;
-            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.6));
-        }
-
-        /* Tooltip descritivo suave ao passar o mouse */
-        .spot-tooltip-text {
+        /* TOOLTIP REFINADO NO HOVER */
+        .spot-node .spot-hover-tip {
             display: none;
             position: absolute;
             bottom: calc(100% + 8px);
@@ -128,11 +167,13 @@
             pointer-events: none;
             z-index: 250;
         }
-
-        .spot-custom-3d:hover .spot-tooltip-text {
+        .spot-node:hover .spot-hover-tip {
             display: block !important;
         }
 
+        .pnlm-tooltip span { display: none !important; }
+
+        /* LIGHTBOX */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -213,7 +254,7 @@
     </div>
 </div>
 
-<!-- Modal Flutuante com Seleção Visual de Ícones -->
+<!-- Modal Flutuante com Ícones Visuais e Bússola -->
 <div id="modal-overlay">
     <div id="modal-box">
         <h3>Configurar Ponto Interativo</h3>
@@ -230,7 +271,7 @@
             <select id="modalTargetScene" onchange="updateDefaultText()"></select>
 
             <label>Texto descritivo (ao passar o cursor):</label>
-            <input type="text" id="modalText" placeholder="ex: Ir para a Sala">
+            <input type="text" id="modalText" placeholder="ex: Ir para o Quarto">
 
             <label>Direção da visão ao chegar:</label>
             <button type="button" class="btn-preview" onclick="startVisualAlign()">🎯 Alinhar visão no destino</button>
@@ -259,36 +300,35 @@
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Seletor Visual de Ícones 3D -->
+        <!-- Seletor Visual de Formatos 3D -->
         <div class="modal-section">
-            <label style="color:#f5b301; font-weight:bold; margin-top:0;">Escolha o Ícone 3D:</label>
+            <label style="color:#f5b301; font-weight:bold; margin-top:0;">Formato do Ícone 3D:</label>
             
             <div class="icon-selector-grid">
-                <div class="icon-choice-card active" onclick="selectShape('circle', this)">
+                <div class="icon-choice-card" onclick="selectShape('shape-circle', this)">
                     <span class="icon-choice-preview">⚪</span>
                     <span class="icon-choice-label">Círculo 3D</span>
                 </div>
-                <div class="icon-choice-card" onclick="selectShape('arrow', this)">
-                    <span class="icon-choice-preview">➜</span>
-                    <span class="icon-choice-label">Seta 3D</span>
+                <div class="icon-choice-card active" onclick="selectShape('shape-floor-arrow', this)">
+                    <span class="icon-choice-preview">▲</span>
+                    <span class="icon-choice-label">Seta de Chão 3D</span>
                 </div>
-                <div class="icon-choice-card" onclick="selectShape('info', this)">
+                <div class="icon-choice-card" onclick="selectShape('shape-info', this)">
                     <span class="icon-choice-preview">ℹ️</span>
                     <span class="icon-choice-label">Info 3D</span>
                 </div>
-                <div class="icon-choice-card" onclick="selectShape('pin', this)">
-                    <span class="icon-choice-preview">📍</span>
-                    <span class="icon-choice-label">Marcador</span>
+            </div>
+
+            <!-- Bússola Visual Interativa para Seta de Chão -->
+            <div id="compassDirectionWrap" style="margin-top: 10px;">
+                <label style="text-align: center; color: #fff;">🧭 Aponte a direção da seta (clique ou arraste no círculo):</label>
+                <div id="dial-container" onmousedown="startDialDrag(event)">
+                    <div id="dial-needle"></div>
+                    <div id="dial-center"></div>
                 </div>
             </div>
 
-            <!-- Direção da seta (se aplicável) -->
-            <div id="arrowAngleWrap" style="display: none; margin-top: 8px;">
-                <label id="labelArrowRotation">Direção da Seta: 0° (Frente)</label>
-                <input type="range" id="inputArrowRotation" min="0" max="360" value="0" oninput="updateArrowAngleText(this.value)">
-            </div>
-
-            <label style="margin-top:10px;">Cor do Marcador:</label>
+            <label style="margin-top:8px;">Cor do Marcador:</label>
             <input type="color" id="spotColorInput" value="#f5b301" onchange="updateSpotStyle()">
             <div class="color-presets">
                 <div class="color-dot" style="background:#f5b301;" onclick="setPresetColor('#f5b301')"></div>
@@ -298,11 +338,11 @@
                 <div class="color-dot" style="background:#ffffff;" onclick="setPresetColor('#ffffff')"></div>
             </div>
 
-            <label id="labelSize" style="margin-top:8px;">Tamanho: 40px</label>
-            <input type="range" id="inputSpotSize" min="24" max="70" value="40" oninput="updateSpotStyle()">
+            <label id="labelSize" style="margin-top:8px;">Tamanho: 46px</label>
+            <input type="range" id="inputSpotSize" min="28" max="75" value="46" oninput="updateSpotStyle()">
 
-            <label id="labelOpacity" style="margin-top:6px;">Opacidade: 85%</label>
-            <input type="range" id="inputSpotOpacity" min="20" max="100" value="85" oninput="updateSpotStyle()">
+            <label id="labelOpacity" style="margin-top:6px;">Opacidade: 88%</label>
+            <input type="range" id="inputSpotOpacity" min="20" max="100" value="88" oninput="updateSpotStyle()">
         </div>
 
         <div class="modal-buttons">
@@ -329,29 +369,51 @@
     var currentSceneId = "";
     var tempCoords = null;
     var tempTargetYaw = 0;
-    var currentSelectedShape = "circle";
+    var currentSelectedShape = "shape-floor-arrow";
+    var visualArrowAngle = 0; // Ângulo em graus definido na bússola
     var addPointMode = false;
     var isDragging = false;
+    var isDialDragging = false;
     var startX = 0, startY = 0;
     var availableRepoImages = [];
 
-    // Ícones vetoriais SVG nítidos para 3D
-    var svgIcons = {
-        circle: '',
-        arrow: '<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>',
-        info: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>',
-        pin: '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'
-    };
+    // Bússola Visual Interativa
+    function startDialDrag(e) {
+        isDialDragging = true;
+        updateDialFromMouse(e);
+        window.addEventListener('mousemove', updateDialFromMouse);
+        window.addEventListener('mouseup', stopDialDrag);
+    }
+
+    function updateDialFromMouse(e) {
+        if (!isDialDragging) return;
+        var dial = document.getElementById('dial-container');
+        var rect = dial.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var dx = e.clientX - cx;
+        var dy = e.clientY - cy;
+        
+        // Converte coordenadas do mouse em graus (0° = Topo/Frente)
+        var rad = Math.atan2(dx, -dy);
+        var deg = Math.round(rad * (180 / Math.PI));
+        if (deg < 0) deg += 360;
+
+        visualArrowAngle = deg;
+        document.getElementById('dial-needle').style.transform = 'rotate(' + deg + 'deg)';
+    }
+
+    function stopDialDrag() {
+        isDialDragging = false;
+        window.removeEventListener('mousemove', updateDialFromMouse);
+        window.removeEventListener('mouseup', stopDialDrag);
+    }
 
     function selectShape(shape, cardElem) {
         currentSelectedShape = shape;
         document.querySelectorAll('.icon-choice-card').forEach(function(c) { c.classList.remove('active'); });
         cardElem.classList.add('active');
-        document.getElementById('arrowAngleWrap').style.display = (shape === 'arrow') ? 'block' : 'none';
-    }
-
-    function updateArrowAngleText(val) {
-        document.getElementById('labelArrowRotation').innerText = 'Direção da Seta: ' + val + '°';
+        document.getElementById('compassDirectionWrap').style.display = (shape === 'shape-floor-arrow') ? 'block' : 'none';
     }
 
     function updateSpotStyle() {
@@ -563,27 +625,32 @@
         document.getElementById('lightbox-overlay').style.display = 'none';
     }
 
-    // Renderizador visual dos elementos sem delay
-    function customHotspotRenderer(hotSpotDiv, args) {
-        hotSpotDiv.classList.add('spot-custom-3d');
-        
-        var iconWrap = document.createElement('div');
-        iconWrap.className = 'spot-inner-icon';
-        
-        var shape = args.shape || 'circle';
-        iconWrap.innerHTML = svgIcons[shape] || '';
-        
-        if (shape === 'arrow' && args.rotation) {
-            iconWrap.style.transform = 'rotate(' + args.rotation + 'deg)';
-        }
-        hotSpotDiv.appendChild(iconWrap);
+    // MONTA O ÍCONE INTERNO GARANTINDO QUE ELE SEMPRE APAREÇA
+    function injectHotspotElements() {
+        var cleanScenes = tourData.scenes[currentSceneId];
+        if (!cleanScenes) return;
 
-        if (args.text && args.text.trim() !== "") {
-            var tooltip = document.createElement('div');
-            tooltip.className = 'spot-tooltip-text';
-            tooltip.innerText = args.text;
-            hotSpotDiv.appendChild(tooltip);
-        }
+        var domSpots = document.querySelectorAll('.spot-node');
+        domSpots.forEach(function(el, idx) {
+            var sp = cleanScenes.hotSpots[idx];
+            if (!sp || el.querySelector('.spot-inner')) return;
+
+            var inner = document.createElement('div');
+            inner.className = 'spot-inner';
+
+            if (sp.shape === 'shape-floor-arrow') {
+                var angle = sp.rotation || 0;
+                inner.innerHTML = '<svg viewBox="0 0 24 24" style="transform: rotate(' + angle + 'deg);"><path d="M12 2L3 19h6v3h6v-3h6z"/></svg>';
+            }
+            el.appendChild(inner);
+
+            if (sp.text && sp.text.trim() !== '') {
+                var tip = document.createElement('div');
+                tip.className = 'spot-hover-tip';
+                tip.innerText = sp.text;
+                el.appendChild(tip);
+            }
+        });
     }
 
     function rebuildViewer(targetSceneId) {
@@ -596,12 +663,8 @@
         
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
-                sp.createTooltipFunc = customHotspotRenderer;
-                sp.createTooltipArgs = {
-                    text: sp.text || '',
-                    shape: sp.shape || 'circle',
-                    rotation: sp.rotation || 0
-                };
+                var shapeClass = sp.shape || 'shape-floor-arrow';
+                sp.cssClass = 'spot-node ' + shapeClass;
 
                 if (sp.type === 'info') {
                     sp.clickHandlerFunc = (function(spot) {
@@ -622,6 +685,10 @@
             "scenes": cleanScenes
         });
 
+        viewer.on('load', function() {
+            injectHotspotElements();
+        });
+
         viewer.loadScene(targetSceneId);
         document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[targetSceneId].title + '". Arraste para girar livremente.';
         setupClickHandler();
@@ -637,6 +704,8 @@
                 if (coords && coords.length >= 2) {
                     tempCoords = coords;
                     tempTargetYaw = 0;
+                    visualArrowAngle = 0;
+                    document.getElementById('dial-needle').style.transform = 'rotate(0deg)';
                     document.getElementById('yawInfoText').innerText = 'Usando visão padrão (0°)';
                     openModal();
                 }
@@ -697,14 +766,13 @@
 
     function confirmHotspot() {
         var type = document.getElementById('hotspotTypeSelect').value;
-        var rotationVal = (currentSelectedShape === 'arrow') ? parseInt(document.getElementById('inputArrowRotation').value, 10) : 0;
 
         var spotObj = {
             "pitch": parseFloat(tempCoords[0].toFixed(2)),
             "yaw": parseFloat(tempCoords[1].toFixed(2)),
             "type": type,
             "shape": currentSelectedShape,
-            "rotation": rotationVal
+            "rotation": (currentSelectedShape === 'shape-floor-arrow') ? visualArrowAngle : 0
         };
 
         if (type === 'scene') {
