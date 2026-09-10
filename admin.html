@@ -42,9 +42,11 @@
         button.tool-btn { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; font-weight: 500; }
         button.tool-btn.active { background: #10b981; border-color: #059669; color: #fff; }
         
-        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; cursor: pointer; }
+        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; cursor: pointer; }
         .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
-        .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
+        .photo-chip-info { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
+        .photo-chip-title { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; white-space: nowrap; }
         
         .hotspot-item { display: flex; justify-content: space-between; align-items: center; background: #14171f; border: 1px solid #2e3748; border-radius: 5px; padding: 6px 8px; margin-top: 6px; font-size: 11px; }
         .item-actions { display: flex; gap: 4px; }
@@ -52,6 +54,8 @@
         .btn-edit:hover { background: #2563eb; }
         .btn-delete { width: auto; padding: 3px 8px; background: #ef4444; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
         .btn-delete:hover { background: #dc2626; }
+        .btn-delete-scene { width: auto; padding: 3px 6px; background: transparent; color: #8c97a8; border: 1px solid #3b4457; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
+        .btn-delete-scene:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 
         .color-presets { display: flex; gap: 6px; margin-top: 6px; }
         .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
@@ -82,9 +86,7 @@
         #align-banner p { margin: 0 0 8px 0; font-size: 13px; color: #fff; }
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
-        /* =======================================================
-           CÍRCULO 2D COM OVERFLOW VISÍVEL PARA O TEXTO FLUTUAR
-           ======================================================= */
+        /* CÍRCULO BASE 2D */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -135,13 +137,12 @@
             fill: var(--spot-color) !important;
         }
 
-        /* ANULA QUALQUER ELEMENTO PADRÃO DO PANNELLUM */
         .pnlm-tooltip,
         .pnlm-tooltip span {
             display: none !important;
         }
 
-        /* NOVO CONTAINER DE TEXTO EXCLUSIVO (NUNCA ENCOSTA NO CÍRCULO) */
+        /* CONTAINER DE TEXTO EXCLUSIVO (AFASTADO) */
         .spot-label {
             position: absolute !important;
             left: 50% !important;
@@ -161,13 +162,11 @@
             z-index: 1000 !important;
         }
 
-        /* Acima: 14px fora do topo do círculo */
         .spot-label.pos-top {
             bottom: calc(100% + 14px) !important;
             top: auto !important;
         }
 
-        /* Abaixo: 14px fora do fundo do círculo */
         .spot-label.pos-bottom {
             top: calc(100% + 14px) !important;
             bottom: auto !important;
@@ -568,18 +567,79 @@
         rebuildViewer(id);
     }
 
+    // Renderização dos Ambientes com botão de Excluir e clique sincronizado
     function renderScenesList() {
         var container = document.getElementById('tourScenesList');
         container.innerHTML = '<label style="margin-bottom:4px;">Ambientes Ativos:</label>';
         for (var id in tourData.scenes) {
             var chip = document.createElement('div');
             chip.className = 'photo-chip' + (id === currentSceneId ? ' active' : '');
-            chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' pontos</span>';
-            chip.onclick = (function(sceneId) {
+            
+            var infoWrap = document.createElement('div');
+            infoWrap.className = 'photo-chip-info';
+            infoWrap.onclick = (function(sceneId) {
                 return function() { switchSceneView(sceneId); };
             })(id);
+
+            var titleSpan = document.createElement('span');
+            titleSpan.className = 'photo-chip-title';
+            titleSpan.innerText = tourData.scenes[id].title;
+
+            var badgeSpan = document.createElement('span');
+            badgeSpan.className = 'badge';
+            badgeSpan.innerText = tourData.scenes[id].hotSpots.length + ' pts';
+
+            infoWrap.appendChild(titleSpan);
+            infoWrap.appendChild(badgeSpan);
+
+            var deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-delete-scene';
+            deleteBtn.title = 'Excluir este ambiente';
+            deleteBtn.innerText = '✕';
+            deleteBtn.onclick = (function(sceneId, event) {
+                return function(e) {
+                    e.stopPropagation();
+                    deleteScene(sceneId);
+                };
+            })(id);
+
+            chip.appendChild(infoWrap);
+            chip.appendChild(deleteBtn);
             container.appendChild(chip);
         }
+    }
+
+    // Exclusão completa do ambiente com limpeza de referências cruzadas
+    function deleteScene(sceneId) {
+        if (!confirm('Deseja realmente excluir o ambiente "' + tourData.scenes[sceneId].title + '"?')) return;
+
+        delete tourData.scenes[sceneId];
+
+        // Remove passagens de outros ambientes que apontavam para o ambiente excluído
+        for (var s in tourData.scenes) {
+            tourData.scenes[s].hotSpots = tourData.scenes[s].hotSpots.filter(function(sp) {
+                return sp.sceneId !== sceneId;
+            });
+        }
+
+        var remainingIds = Object.keys(tourData.scenes);
+        if (remainingIds.length === 0) {
+            tourData.default.firstScene = "";
+            currentSceneId = "";
+            if (viewer) { viewer.destroy(); viewer = null; }
+            renderScenesList();
+            renderActiveSceneHotspots();
+            document.getElementById('instructionText').innerText = 'Adicione um ambiente ou carregue um tour para começar.';
+            return;
+        }
+
+        if (tourData.default.firstScene === sceneId) {
+            tourData.default.firstScene = remainingIds[0];
+        }
+
+        currentSceneId = remainingIds[0];
+        renderScenesList();
+        rebuildViewer(currentSceneId);
     }
 
     function renderActiveSceneHotspots() {
@@ -615,9 +675,12 @@
     function deleteHotspot(index) {
         if (!currentSceneId || !tourData.scenes[currentSceneId]) return;
         tourData.scenes[currentSceneId].hotSpots.splice(index, 1);
+        renderScenesList();
+        renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
 
+    // Troca e sincronização manual via barra lateral
     function switchSceneView(sceneId) {
         currentSceneId = sceneId;
         renderScenesList();
@@ -666,7 +729,6 @@
                 sp.cssClass = shapeClass;
 
                 sp.createTooltipFunc = function(hotSpotDiv, args) {
-                    // Seta no centro
                     if (args.shape === 'shape-arrow') {
                         var arrowDiv = document.createElement('div');
                         arrowDiv.className = 'spot-arrow-center';
@@ -675,7 +737,6 @@
                         arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
                     }
                     
-                    // Texto fora do círculo
                     if (args.text && args.text.trim() !== '') {
                         var labelDiv = document.createElement('div');
                         labelDiv.className = 'spot-label ' + (args.textPosition === 'bottom' ? 'pos-bottom' : 'pos-top');
@@ -708,6 +769,16 @@
         viewer = pannellum.viewer('panorama', {
             "default": tourData.default,
             "scenes": cleanScenes
+        });
+
+        // SINCRONIZAÇÃO AUTOMÁTICA QUANDO O USUÁRIO NAVEGA CLICANDO NO TOUR
+        viewer.on('scenechange', function(newSceneId) {
+            if (currentSceneId !== newSceneId && tourData.scenes[newSceneId]) {
+                currentSceneId = newSceneId;
+                renderScenesList();
+                renderActiveSceneHotspots();
+                document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[newSceneId].title + '". Arraste para girar livremente.';
+            }
         });
 
         viewer.loadScene(targetSceneId);
@@ -890,6 +961,7 @@
 
         closeModal();
         if (addPointMode) toggleAddPointMode();
+        renderScenesList();
         rebuildViewer(currentSceneId);
     }
 
