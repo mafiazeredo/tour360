@@ -83,7 +83,7 @@
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
         /* =======================================================
-           CÍRCULO BASE 2D NATIVO COM CENTRALIZAÇÃO RIGOROSA
+           CÍRCULO BASE 2D COM ANCORAGEM PERFEITA
            ======================================================= */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
@@ -106,15 +106,15 @@
             background: #ffffff !important;
         }
 
-        /* SETA CRAVADA RIGOROSAMENTE NO CENTRO DO CÍRCULO */
+        /* SETA RIGOROSAMENTE CENTRALIZADA NO CÍRCULO */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
             left: 50% !important;
-            width: calc(var(--spot-size) * 0.46) !important;
-            height: calc(var(--spot-size) * 0.46) !important;
-            margin-top: calc(var(--spot-size) * -0.23) !important;
-            margin-left: calc(var(--spot-size) * -0.23) !important;
+            width: calc(var(--spot-size) * 0.48) !important;
+            height: calc(var(--spot-size) * 0.48) !important;
+            margin-top: calc(var(--spot-size) * -0.24) !important;
+            margin-left: calc(var(--spot-size) * -0.24) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -134,7 +134,13 @@
             fill: var(--spot-color) !important;
         }
 
-        /* POSICIONAMENTO DO TEXTO CONFIGURÁVEL (ACIMA OU ABAIXO) */
+        /* =======================================================
+           TEXTO FORA DO CÍRCULO (NUNCA TOCA NEM CORTA A BORDA)
+           ======================================================= */
+        .pnlm-tooltip {
+            position: static !important;
+        }
+
         .pnlm-tooltip span {
             display: block !important;
             position: absolute !important;
@@ -143,23 +149,28 @@
             white-space: nowrap !important;
             color: #ffffff !important;
             font-size: 11px !important;
-            font-weight: 500 !important;
+            font-weight: 600 !important;
             text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 6px rgba(0,0,0,0.9) !important;
             pointer-events: none !important;
-            padding: 2px 6px !important;
+            padding: 3px 8px !important;
             border-radius: 4px !important;
-            background: rgba(18, 21, 27, 0.7) !important;
+            background: rgba(18, 21, 27, 0.85) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            line-height: 1.2 !important;
+            margin: 0 !important;
+            width: auto !important;
+            height: auto !important;
         }
 
-        /* Texto posicionado ACIMA do círculo */
+        /* TOTALMENTE ACIMA: 12px de distância da borda superior */
         .text-pos-top .pnlm-tooltip span {
-            bottom: calc(100% + 6px) !important;
+            bottom: calc(100% + 12px) !important;
             top: auto !important;
         }
 
-        /* Texto posicionado ABAIXO do círculo */
+        /* TOTALMENTE ABAIXO: 12px de distância da borda inferior */
         .text-pos-bottom .pnlm-tooltip span {
-            top: calc(100% + 6px) !important;
+            top: calc(100% + 12px) !important;
             bottom: auto !important;
         }
 
@@ -262,8 +273,8 @@
 
             <label>Posição do Texto:</label>
             <select id="modalTextPositionSelect">
-                <option value="top">Acima do círculo</option>
-                <option value="bottom">Abaixo do círculo</option>
+                <option value="top">Acima do círculo (sem encostar)</option>
+                <option value="bottom">Abaixo do círculo (sem encostar)</option>
             </select>
 
             <label>Direção da visão ao chegar:</label>
@@ -278,8 +289,8 @@
 
             <label>Posição do Texto:</label>
             <select id="modalInfoTextPositionSelect">
-                <option value="top">Acima do círculo</option>
-                <option value="bottom">Abaixo do círculo</option>
+                <option value="top">Acima do círculo (sem encostar)</option>
+                <option value="bottom">Abaixo do círculo (sem encostar)</option>
             </select>
 
             <label>Foto do Repositório:</label>
@@ -299,7 +310,7 @@
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Seletor: Círculo Limpo ou com Seta -->
+        <!-- Seletor: Círculo Limpo ou Círculo com Seta -->
         <div class="modal-section">
             <label style="color:#f5b301; font-weight:bold; margin-top:0;">Formato do Ícone:</label>
             
@@ -628,7 +639,6 @@
         document.getElementById('lightbox-overlay').style.display = 'none';
     }
 
-    // Sincronização contínua da rotação da seta cravada no centro
     function updateArrowsRotation() {
         if (!viewer) return;
         var currentYaw = viewer.getYaw();
