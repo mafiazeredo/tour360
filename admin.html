@@ -492,6 +492,7 @@
                     tourData = loadedData;
                     var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
                     currentSceneId = firstScene;
+                    tourData.default.firstScene = firstScene;
                     renderScenesList();
                     renderActiveSceneHotspots();
                     rebuildViewer(firstScene);
@@ -562,9 +563,10 @@
         if (tourData.scenes[id]) return alert('Este ambiente já foi adicionado!');
         tourData.scenes[id] = { "title": title, "type": "equirectangular", "panorama": filename, "hotSpots": [] };
         
-        if (!tourData.default.firstScene) tourData.default.firstScene = id;
-
+        // Define este novo ambiente como cena inicial atual
+        tourData.default.firstScene = id;
         currentSceneId = id;
+
         renderScenesList();
         renderActiveSceneHotspots();
         rebuildViewer(id);
@@ -633,10 +635,7 @@
             return;
         }
 
-        if (tourData.default.firstScene === sceneId) {
-            tourData.default.firstScene = remainingIds[0];
-        }
-
+        tourData.default.firstScene = remainingIds[0];
         currentSceneId = remainingIds[0];
         renderScenesList();
         renderActiveSceneHotspots();
@@ -681,16 +680,14 @@
         rebuildViewer(currentSceneId);
     }
 
-    // Troca de cena limpa, usando loadScene nativo sem destruir a instância
+    // Troca de cena à esquerda: atualiza a cena atual e recria de forma limpa
     function switchSceneView(sceneId) {
         if (!tourData.scenes[sceneId]) return;
         currentSceneId = sceneId;
+        tourData.default.firstScene = sceneId; // Garante que o Pannellum não volte para o primeiro
         renderScenesList();
         renderActiveSceneHotspots();
-        if (viewer) {
-            viewer.loadScene(sceneId);
-        }
-        document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
+        rebuildViewer(sceneId);
     }
 
     function openLightbox(src, caption) {
@@ -716,7 +713,6 @@
         requestAnimationFrame(updateArrowsRotation);
     }
 
-    // Monta os hotspots preparando as cenas para o Pannellum
     function buildCleanScenesConfig() {
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
         arrowNodes = [];
@@ -768,8 +764,10 @@
 
     function rebuildViewer(targetSceneId) {
         currentSceneId = targetSceneId;
+        tourData.default.firstScene = targetSceneId;
         renderScenesList();
         renderActiveSceneHotspots();
+        arrowNodes = [];
         if (viewer) { viewer.destroy(); viewer = null; }
 
         var cleanScenes = buildCleanScenesConfig();
@@ -779,10 +777,11 @@
             "scenes": cleanScenes
         });
 
-        // Sincronização segura: escuta 'scenechange' apenas para atualizar os menus
+        // Sincronização ao clicar em seta no tour
         viewer.on('scenechange', function(newSceneId) {
             if (currentSceneId !== newSceneId && tourData.scenes[newSceneId]) {
                 currentSceneId = newSceneId;
+                tourData.default.firstScene = newSceneId;
                 renderScenesList();
                 renderActiveSceneHotspots();
                 document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[newSceneId].title + '". Arraste para girar livremente.';
@@ -800,6 +799,17 @@
         el.onmousemove = function(e) { if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) isDragging = true; };
         el.onmouseup = function(e) {
             if (!isDragging && addPointMode) {
+                // Assegura que o clique é gravado no ambiente visualmente ativo no motor
+                if (viewer) {
+                    var realScene = viewer.getScene();
+                    if (realScene && realScene !== currentSceneId) {
+                        currentSceneId = realScene;
+                        tourData.default.firstScene = realScene;
+                        renderScenesList();
+                        renderActiveSceneHotspots();
+                    }
+                }
+
                 var coords = viewer.mouseEventToCoords(e);
                 if (coords && coords.length >= 2) {
                     tempCoords = coords;
