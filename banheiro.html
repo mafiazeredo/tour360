@@ -8,8 +8,9 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <style>
         :root {
-            --spot-size: 36px;
-            --spot-opacity: 0.75;
+            --spot-size: 40px;
+            --spot-opacity: 0.85;
+            --spot-default-color: #f5b301;
         }
 
         html, body {
@@ -19,6 +20,7 @@
             padding: 0;
             overflow: hidden;
             background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         #panorama {
@@ -26,32 +28,93 @@
             height: 100%;
         }
 
-        /* Estilo dos círculos fixos sem cards */
-        .spot-circle {
+        /* Marcador Base 2D Circular */
+        .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
             margin-left: calc(var(--spot-size) / -2) !important;
             margin-top: calc(var(--spot-size) / -2) !important;
-            border-radius: 50% !important;
-            border: 2px solid rgba(255, 255, 255, 0.95) !important;
-            background: #f5b301 !important;
             opacity: var(--spot-opacity) !important;
-            box-shadow: 0 0 8px rgba(0,0,0,0.6) !important;
             cursor: pointer !important;
             display: block !important;
-            transition: opacity 0.15s ease, background 0.15s ease !important;
+            position: absolute !important;
+            border-radius: 50% !important;
+            background-color: var(--spot-default-color);
+            border: 2px solid #ffffff !important;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.6) !important;
+            transition: none !important;
+            overflow: visible !important;
         }
 
-        .spot-circle:hover {
+        .pnlm-hotspot-base:hover {
             opacity: 1 !important;
-            background: #ffffff !important;
+            background-color: #ffffff !important;
         }
 
-        .spot-circle span {
+        /* Seta Centralizada com Giro Sincronizado */
+        .spot-arrow-center {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            width: calc(var(--spot-size) * 0.48) !important;
+            height: calc(var(--spot-size) * 0.48) !important;
+            margin-top: calc(var(--spot-size) * -0.24) !important;
+            margin-left: calc(var(--spot-size) * -0.24) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            pointer-events: none !important;
+            transform-origin: center center !important;
+        }
+
+        .spot-arrow-center svg {
+            width: 100% !important;
+            height: 100% !important;
+            fill: #ffffff !important;
+            display: block !important;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)) !important;
+        }
+
+        .pnlm-hotspot-base:hover .spot-arrow-center svg {
+            fill: var(--current-spot-color, #f5b301) !important;
+        }
+
+        .pnlm-tooltip,
+        .pnlm-tooltip span {
             display: none !important;
         }
 
-        /* Lightbox de foto cheia */
+        /* Texto Descritivo Afastado (Acima ou Abaixo) */
+        .spot-label {
+            position: absolute !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            white-space: nowrap !important;
+            color: #ffffff !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 6px rgba(0,0,0,0.9) !important;
+            pointer-events: none !important;
+            padding: 3px 8px !important;
+            border-radius: 4px !important;
+            background: rgba(18, 21, 27, 0.85) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            line-height: 1.2 !important;
+            margin: 0 !important;
+            z-index: 1000 !important;
+        }
+
+        .spot-label.pos-top {
+            bottom: calc(100% + 14px) !important;
+            top: auto !important;
+        }
+
+        .spot-label.pos-bottom {
+            top: calc(100% + 14px) !important;
+            bottom: auto !important;
+        }
+
+        /* Lightbox para visualização de fotos */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -80,7 +143,6 @@
             font-size: 15px; 
             font-weight: 500; 
             color: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
     </style>
 </head>
@@ -90,10 +152,13 @@
     <div id="lightbox-overlay" onclick="closeLightbox()">
         <img id="lightbox-img" src="" alt="Detalhe">
         <div id="lightbox-caption"></div>
-        <span style="font-size: 11px; color: #aaa; margin-top: 6px; font-family: sans-serif;">(Clique em qualquer local para fechar)</span>
+        <span style="font-size: 11px; color: #aaa; margin-top: 6px;">(Clique em qualquer local para fechar)</span>
     </div>
 
     <script>
+        var viewer = null;
+        var arrowNodes = [];
+
         function openLightbox(src, caption) {
             document.getElementById('lightbox-img').src = src;
             document.getElementById('lightbox-caption').innerText = caption || '';
@@ -104,17 +169,75 @@
             document.getElementById('lightbox-overlay').style.display = 'none';
         }
 
-        // Carrega o arquivo JSON do repositório
+        // Acompanhamento suave e contínuo do giro da câmera
+        function updateArrowsRotation() {
+            if (!viewer) return;
+            var currentYaw = viewer.getYaw();
+            for (var i = 0; i < arrowNodes.length; i++) {
+                var item = arrowNodes[i];
+                if (item.elem) {
+                    var relativeAngle = item.baseAngle - currentYaw;
+                    item.elem.style.transform = 'rotate(' + relativeAngle + 'deg)';
+                }
+            }
+            requestAnimationFrame(updateArrowsRotation);
+        }
+
+        // Lê o arquivo JSON com todas as customizações salvas
         fetch('tour_config.json')
             .then(function(response) {
                 if (!response.ok) throw new Error('Não foi possível encontrar o arquivo tour_config.json');
                 return response.json();
             })
             .then(function(tourData) {
-                // Aplica a classe dos círculos e ação de clique nas fotos
+                // 1. Aplica Tamanho e Opacidade globais do JSON
+                if (tourData.default) {
+                    if (tourData.default.spotSize) {
+                        document.documentElement.style.setProperty('--spot-size', tourData.default.spotSize + 'px');
+                    }
+                    if (tourData.default.spotOpacity) {
+                        document.documentElement.style.setProperty('--spot-opacity', (tourData.default.spotOpacity / 100));
+                    }
+                }
+
+                // 2. Prepara cada hotspot com sua cor individual, seta e posição do texto
                 for (var sc in tourData.scenes) {
                     tourData.scenes[sc].hotSpots.forEach(function(sp) {
-                        sp.cssClass = 'spot-circle';
+                        var shapeClass = sp.shape || 'shape-arrow';
+                        sp.cssClass = shapeClass;
+
+                        sp.createTooltipFunc = function(hotSpotDiv, args) {
+                            var spotColor = args.color || '#f5b301';
+                            hotSpotDiv.style.backgroundColor = spotColor;
+                            hotSpotDiv.style.setProperty('--current-spot-color', spotColor);
+
+                            // Insere seta no centro se for o caso
+                            if (args.shape === 'shape-arrow') {
+                                var arrowDiv = document.createElement('div');
+                                arrowDiv.className = 'spot-arrow-center';
+                                arrowDiv.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3l8 17-8-5-8 5z"/></svg>';
+                                hotSpotDiv.appendChild(arrowDiv);
+                                arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
+                            }
+
+                            // Insere texto descritivo na posição configurada
+                            if (args.text && args.text.trim() !== '') {
+                                var labelDiv = document.createElement('div');
+                                labelDiv.className = 'spot-label ' + (args.textPosition === 'bottom' ? 'pos-bottom' : 'pos-top');
+                                labelDiv.innerText = args.text;
+                                hotSpotDiv.appendChild(labelDiv);
+                            }
+                        };
+
+                        sp.createTooltipArgs = {
+                            shape: shapeClass,
+                            rotation: sp.rotation || 0,
+                            text: sp.text || '',
+                            textPosition: sp.textPosition || 'top',
+                            color: sp.color || '#f5b301'
+                        };
+
+                        // Ação de clique para pontos de foto ou link
                         if (sp.type === 'info') {
                             sp.clickHandlerFunc = (function(spot) {
                                 return function() {
@@ -129,16 +252,18 @@
                     });
                 }
 
-                pannellum.viewer('panorama', tourData);
+                viewer = pannellum.viewer('panorama', tourData);
 
                 var aboutBox = document.querySelector('.pnlm-about-msg');
                 if (aboutBox) {
                     aboutBox.innerHTML = '<a href="https://marcellofotografia.com.br" target="_blank" style="color:#fff; text-decoration:none;">Marcello Fotografia | Tour 360°</a>';
                 }
+
+                requestAnimationFrame(updateArrowsRotation);
             })
             .catch(function(err) {
                 console.error(err);
-                document.body.innerHTML = '<div style="color:#fff; font-family:sans-serif; text-align:center; padding-top:50px;">Erro ao carregar o arquivo tour_config.json. Verifique se ele foi commitado no repositório.</div>';
+                document.body.innerHTML = '<div style="color:#fff; text-align:center; padding-top:50px;">Erro ao carregar o arquivo tour_config.json. Verifique se ele foi commitado no repositório.</div>';
             });
     </script>
 </body>
