@@ -42,11 +42,9 @@
         button.tool-btn { background: #2e3748; color: #fff; border: 1px solid #475569; cursor: pointer; font-weight: 500; }
         button.tool-btn.active { background: #10b981; border-color: #059669; color: #fff; }
         
-        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; cursor: pointer; }
+        .photo-chip { background: #14171f; border: 1px solid #2e3748; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; cursor: pointer; }
         .photo-chip.active { border-color: #f5b301; background: #262c3a; font-weight: bold; }
-        .photo-chip-info { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
-        .photo-chip-title { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-        .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; white-space: nowrap; }
+        .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; background: #2e3748; color: #8c97a8; }
         
         .hotspot-item { display: flex; justify-content: space-between; align-items: center; background: #14171f; border: 1px solid #2e3748; border-radius: 5px; padding: 6px 8px; margin-top: 6px; font-size: 11px; }
         .item-actions { display: flex; gap: 4px; }
@@ -54,8 +52,6 @@
         .btn-edit:hover { background: #2563eb; }
         .btn-delete { width: auto; padding: 3px 8px; background: #ef4444; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
         .btn-delete:hover { background: #dc2626; }
-        .btn-delete-scene { width: auto; padding: 3px 6px; background: transparent; color: #8c97a8; border: 1px solid #3b4457; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 0; }
-        .btn-delete-scene:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 
         .color-presets { display: flex; gap: 6px; margin-top: 6px; }
         .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
@@ -491,11 +487,8 @@
                 if (loadedData.scenes && loadedData.default) {
                     tourData = loadedData;
                     var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
-                    currentSceneId = firstScene;
-                    tourData.default.firstScene = firstScene;
                     renderScenesList();
-                    renderActiveSceneHotspots();
-                    rebuildViewer(firstScene);
+                    if (firstScene) rebuildViewer(firstScene);
                     alert('Tour carregado com sucesso!');
                 } else {
                     alert('Formato de arquivo inválido!');
@@ -563,12 +556,10 @@
         if (tourData.scenes[id]) return alert('Este ambiente já foi adicionado!');
         tourData.scenes[id] = { "title": title, "type": "equirectangular", "panorama": filename, "hotSpots": [] };
         
-        // Define este novo ambiente como cena inicial atual
-        tourData.default.firstScene = id;
-        currentSceneId = id;
+        if (!tourData.default.firstScene) tourData.default.firstScene = id;
 
+        currentSceneId = id;
         renderScenesList();
-        renderActiveSceneHotspots();
         rebuildViewer(id);
     }
 
@@ -578,68 +569,12 @@
         for (var id in tourData.scenes) {
             var chip = document.createElement('div');
             chip.className = 'photo-chip' + (id === currentSceneId ? ' active' : '');
-            
-            var infoWrap = document.createElement('div');
-            infoWrap.className = 'photo-chip-info';
-            infoWrap.onclick = (function(sceneId) {
+            chip.innerHTML = '<span>' + tourData.scenes[id].title + '</span><span class="badge">' + tourData.scenes[id].hotSpots.length + ' pontos</span>';
+            chip.onclick = (function(sceneId) {
                 return function() { switchSceneView(sceneId); };
             })(id);
-
-            var titleSpan = document.createElement('span');
-            titleSpan.className = 'photo-chip-title';
-            titleSpan.innerText = tourData.scenes[id].title;
-
-            var badgeSpan = document.createElement('span');
-            badgeSpan.className = 'badge';
-            badgeSpan.innerText = tourData.scenes[id].hotSpots.length + ' pts';
-
-            infoWrap.appendChild(titleSpan);
-            infoWrap.appendChild(badgeSpan);
-
-            var deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn-delete-scene';
-            deleteBtn.title = 'Excluir este ambiente';
-            deleteBtn.innerText = '✕';
-            deleteBtn.onclick = (function(sceneId) {
-                return function(e) {
-                    e.stopPropagation();
-                    deleteScene(sceneId);
-                };
-            })(id);
-
-            chip.appendChild(infoWrap);
-            chip.appendChild(deleteBtn);
             container.appendChild(chip);
         }
-    }
-
-    function deleteScene(sceneId) {
-        if (!confirm('Deseja realmente excluir o ambiente "' + tourData.scenes[sceneId].title + '"?')) return;
-
-        delete tourData.scenes[sceneId];
-
-        for (var s in tourData.scenes) {
-            tourData.scenes[s].hotSpots = tourData.scenes[s].hotSpots.filter(function(sp) {
-                return sp.sceneId !== sceneId;
-            });
-        }
-
-        var remainingIds = Object.keys(tourData.scenes);
-        if (remainingIds.length === 0) {
-            tourData.default.firstScene = "";
-            currentSceneId = "";
-            if (viewer) { viewer.destroy(); viewer = null; }
-            renderScenesList();
-            renderActiveSceneHotspots();
-            document.getElementById('instructionText').innerText = 'Adicione um ambiente ou carregue um tour para começar.';
-            return;
-        }
-
-        tourData.default.firstScene = remainingIds[0];
-        currentSceneId = remainingIds[0];
-        renderScenesList();
-        renderActiveSceneHotspots();
-        rebuildViewer(currentSceneId);
     }
 
     function renderActiveSceneHotspots() {
@@ -680,14 +615,14 @@
         rebuildViewer(currentSceneId);
     }
 
-    // Troca de cena à esquerda: atualiza a cena atual e recria de forma limpa
     function switchSceneView(sceneId) {
-        if (!tourData.scenes[sceneId]) return;
         currentSceneId = sceneId;
-        tourData.default.firstScene = sceneId; // Garante que o Pannellum não volte para o primeiro
         renderScenesList();
         renderActiveSceneHotspots();
-        rebuildViewer(sceneId);
+        if (viewer) {
+            viewer.loadScene(sceneId);
+            document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
+        }
     }
 
     function openLightbox(src, caption) {
@@ -713,16 +648,22 @@
         requestAnimationFrame(updateArrowsRotation);
     }
 
-    function buildCleanScenesConfig() {
-        var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
+    function rebuildViewer(targetSceneId) {
+        currentSceneId = targetSceneId;
+        renderScenesList();
+        renderActiveSceneHotspots();
         arrowNodes = [];
+        if (viewer) { viewer.destroy(); viewer = null; }
 
+        var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
+        
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
                 var shapeClass = sp.shape || 'shape-arrow';
                 sp.cssClass = shapeClass;
 
                 sp.createTooltipFunc = function(hotSpotDiv, args) {
+                    // Seta no centro
                     if (args.shape === 'shape-arrow') {
                         var arrowDiv = document.createElement('div');
                         arrowDiv.className = 'spot-arrow-center';
@@ -731,6 +672,7 @@
                         arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
                     }
                     
+                    // Texto fora do círculo
                     if (args.text && args.text.trim() !== '') {
                         var labelDiv = document.createElement('div');
                         labelDiv.className = 'spot-label ' + (args.textPosition === 'bottom' ? 'pos-bottom' : 'pos-top');
@@ -759,33 +701,10 @@
                 }
             });
         }
-        return cleanScenes;
-    }
-
-    function rebuildViewer(targetSceneId) {
-        currentSceneId = targetSceneId;
-        tourData.default.firstScene = targetSceneId;
-        renderScenesList();
-        renderActiveSceneHotspots();
-        arrowNodes = [];
-        if (viewer) { viewer.destroy(); viewer = null; }
-
-        var cleanScenes = buildCleanScenesConfig();
 
         viewer = pannellum.viewer('panorama', {
             "default": tourData.default,
             "scenes": cleanScenes
-        });
-
-        // Sincronização ao clicar em seta no tour
-        viewer.on('scenechange', function(newSceneId) {
-            if (currentSceneId !== newSceneId && tourData.scenes[newSceneId]) {
-                currentSceneId = newSceneId;
-                tourData.default.firstScene = newSceneId;
-                renderScenesList();
-                renderActiveSceneHotspots();
-                document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[newSceneId].title + '". Arraste para girar livremente.';
-            }
         });
 
         viewer.loadScene(targetSceneId);
@@ -799,17 +718,6 @@
         el.onmousemove = function(e) { if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) isDragging = true; };
         el.onmouseup = function(e) {
             if (!isDragging && addPointMode) {
-                // Assegura que o clique é gravado no ambiente visualmente ativo no motor
-                if (viewer) {
-                    var realScene = viewer.getScene();
-                    if (realScene && realScene !== currentSceneId) {
-                        currentSceneId = realScene;
-                        tourData.default.firstScene = realScene;
-                        renderScenesList();
-                        renderActiveSceneHotspots();
-                    }
-                }
-
                 var coords = viewer.mouseEventToCoords(e);
                 if (coords && coords.length >= 2) {
                     tempCoords = coords;
@@ -979,8 +887,6 @@
 
         closeModal();
         if (addPointMode) toggleAddPointMode();
-        renderScenesList();
-        renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
 
