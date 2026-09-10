@@ -491,8 +491,10 @@
                 if (loadedData.scenes && loadedData.default) {
                     tourData = loadedData;
                     var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
+                    currentSceneId = firstScene;
                     renderScenesList();
-                    if (firstScene) rebuildViewer(firstScene);
+                    renderActiveSceneHotspots();
+                    rebuildViewer(firstScene);
                     alert('Tour carregado com sucesso!');
                 } else {
                     alert('Formato de arquivo inválido!');
@@ -564,10 +566,10 @@
 
         currentSceneId = id;
         renderScenesList();
+        renderActiveSceneHotspots();
         rebuildViewer(id);
     }
 
-    // Renderização dos Ambientes com botão de Excluir e clique sincronizado
     function renderScenesList() {
         var container = document.getElementById('tourScenesList');
         container.innerHTML = '<label style="margin-bottom:4px;">Ambientes Ativos:</label>';
@@ -596,7 +598,7 @@
             deleteBtn.className = 'btn-delete-scene';
             deleteBtn.title = 'Excluir este ambiente';
             deleteBtn.innerText = '✕';
-            deleteBtn.onclick = (function(sceneId, event) {
+            deleteBtn.onclick = (function(sceneId) {
                 return function(e) {
                     e.stopPropagation();
                     deleteScene(sceneId);
@@ -609,13 +611,11 @@
         }
     }
 
-    // Exclusão completa do ambiente com limpeza de referências cruzadas
     function deleteScene(sceneId) {
         if (!confirm('Deseja realmente excluir o ambiente "' + tourData.scenes[sceneId].title + '"?')) return;
 
         delete tourData.scenes[sceneId];
 
-        // Remove passagens de outros ambientes que apontavam para o ambiente excluído
         for (var s in tourData.scenes) {
             tourData.scenes[s].hotSpots = tourData.scenes[s].hotSpots.filter(function(sp) {
                 return sp.sceneId !== sceneId;
@@ -639,6 +639,7 @@
 
         currentSceneId = remainingIds[0];
         renderScenesList();
+        renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
 
@@ -680,15 +681,16 @@
         rebuildViewer(currentSceneId);
     }
 
-    // Troca e sincronização manual via barra lateral
+    // Troca de cena limpa, usando loadScene nativo sem destruir a instância
     function switchSceneView(sceneId) {
+        if (!tourData.scenes[sceneId]) return;
         currentSceneId = sceneId;
         renderScenesList();
         renderActiveSceneHotspots();
         if (viewer) {
             viewer.loadScene(sceneId);
-            document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
         }
+        document.getElementById('instructionText').innerText = 'Você está em "' + tourData.scenes[sceneId].title + '". Arraste para girar livremente.';
     }
 
     function openLightbox(src, caption) {
@@ -714,15 +716,11 @@
         requestAnimationFrame(updateArrowsRotation);
     }
 
-    function rebuildViewer(targetSceneId) {
-        currentSceneId = targetSceneId;
-        renderScenesList();
-        renderActiveSceneHotspots();
-        arrowNodes = [];
-        if (viewer) { viewer.destroy(); viewer = null; }
-
+    // Monta os hotspots preparando as cenas para o Pannellum
+    function buildCleanScenesConfig() {
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
-        
+        arrowNodes = [];
+
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
                 var shapeClass = sp.shape || 'shape-arrow';
@@ -765,13 +763,23 @@
                 }
             });
         }
+        return cleanScenes;
+    }
+
+    function rebuildViewer(targetSceneId) {
+        currentSceneId = targetSceneId;
+        renderScenesList();
+        renderActiveSceneHotspots();
+        if (viewer) { viewer.destroy(); viewer = null; }
+
+        var cleanScenes = buildCleanScenesConfig();
 
         viewer = pannellum.viewer('panorama', {
             "default": tourData.default,
             "scenes": cleanScenes
         });
 
-        // SINCRONIZAÇÃO AUTOMÁTICA QUANDO O USUÁRIO NAVEGA CLICANDO NO TOUR
+        // Sincronização segura: escuta 'scenechange' apenas para atualizar os menus
         viewer.on('scenechange', function(newSceneId) {
             if (currentSceneId !== newSceneId && tourData.scenes[newSceneId]) {
                 currentSceneId = newSceneId;
@@ -962,6 +970,7 @@
         closeModal();
         if (addPointMode) toggleAddPointMode();
         renderScenesList();
+        renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
 
