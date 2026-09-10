@@ -83,7 +83,7 @@
         #align-banner button { width: auto; padding: 6px 16px; margin: 0; background: #10b981; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
 
         /* =======================================================
-           CÍRCULO BASE 2D COM ANCORAGEM PERFEITA
+           CÍRCULO 2D COM OVERFLOW VISÍVEL PARA O TEXTO FLUTUAR
            ======================================================= */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
@@ -99,6 +99,7 @@
             border: 2px solid #ffffff !important;
             box-shadow: 0 0 8px rgba(0, 0, 0, 0.6) !important;
             transition: none !important;
+            overflow: visible !important;
         }
 
         .pnlm-hotspot-base:hover {
@@ -106,7 +107,7 @@
             background: #ffffff !important;
         }
 
-        /* SETA RIGOROSAMENTE CENTRALIZADA NO CÍRCULO */
+        /* SETA RIGOROSAMENTE CENTRALIZADA */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -134,15 +135,14 @@
             fill: var(--spot-color) !important;
         }
 
-        /* =======================================================
-           TEXTO FORA DO CÍRCULO (NUNCA TOCA NEM CORTA A BORDA)
-           ======================================================= */
-        .pnlm-tooltip {
-            position: static !important;
+        /* ANULA QUALQUER ELEMENTO PADRÃO DO PANNELLUM */
+        .pnlm-tooltip,
+        .pnlm-tooltip span {
+            display: none !important;
         }
 
-        .pnlm-tooltip span {
-            display: block !important;
+        /* NOVO CONTAINER DE TEXTO EXCLUSIVO (NUNCA ENCOSTA NO CÍRCULO) */
+        .spot-label {
             position: absolute !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
@@ -155,22 +155,21 @@
             padding: 3px 8px !important;
             border-radius: 4px !important;
             background: rgba(18, 21, 27, 0.85) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
             line-height: 1.2 !important;
             margin: 0 !important;
-            width: auto !important;
-            height: auto !important;
+            z-index: 1000 !important;
         }
 
-        /* TOTALMENTE ACIMA: 12px de distância da borda superior */
-        .text-pos-top .pnlm-tooltip span {
-            bottom: calc(100% + 12px) !important;
+        /* Acima: 14px fora do topo do círculo */
+        .spot-label.pos-top {
+            bottom: calc(100% + 14px) !important;
             top: auto !important;
         }
 
-        /* TOTALMENTE ABAIXO: 12px de distância da borda inferior */
-        .text-pos-bottom .pnlm-tooltip span {
-            top: calc(100% + 12px) !important;
+        /* Abaixo: 14px fora do fundo do círculo */
+        .spot-label.pos-bottom {
+            top: calc(100% + 14px) !important;
             bottom: auto !important;
         }
 
@@ -273,8 +272,8 @@
 
             <label>Posição do Texto:</label>
             <select id="modalTextPositionSelect">
-                <option value="top">Acima do círculo (sem encostar)</option>
-                <option value="bottom">Abaixo do círculo (sem encostar)</option>
+                <option value="top">Acima do círculo (afastado)</option>
+                <option value="bottom">Abaixo do círculo (afastado)</option>
             </select>
 
             <label>Direção da visão ao chegar:</label>
@@ -289,8 +288,8 @@
 
             <label>Posição do Texto:</label>
             <select id="modalInfoTextPositionSelect">
-                <option value="top">Acima do círculo (sem encostar)</option>
-                <option value="bottom">Abaixo do círculo (sem encostar)</option>
+                <option value="top">Acima do círculo (afastado)</option>
+                <option value="bottom">Abaixo do círculo (afastado)</option>
             </select>
 
             <label>Foto do Repositório:</label>
@@ -664,10 +663,10 @@
         for (var sc in cleanScenes) {
             cleanScenes[sc].hotSpots.forEach(function(sp) {
                 var shapeClass = sp.shape || 'shape-arrow';
-                var posClass = (sp.textPosition === 'bottom') ? 'text-pos-bottom' : 'text-pos-top';
-                sp.cssClass = shapeClass + ' ' + posClass;
+                sp.cssClass = shapeClass;
 
                 sp.createTooltipFunc = function(hotSpotDiv, args) {
+                    // Seta no centro
                     if (args.shape === 'shape-arrow') {
                         var arrowDiv = document.createElement('div');
                         arrowDiv.className = 'spot-arrow-center';
@@ -675,17 +674,21 @@
                         hotSpotDiv.appendChild(arrowDiv);
                         arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
                     }
+                    
+                    // Texto fora do círculo
                     if (args.text && args.text.trim() !== '') {
-                        var span = document.createElement('span');
-                        span.innerText = args.text;
-                        hotSpotDiv.appendChild(span);
+                        var labelDiv = document.createElement('div');
+                        labelDiv.className = 'spot-label ' + (args.textPosition === 'bottom' ? 'pos-bottom' : 'pos-top');
+                        labelDiv.innerText = args.text;
+                        hotSpotDiv.appendChild(labelDiv);
                     }
                 };
 
                 sp.createTooltipArgs = {
                     shape: shapeClass,
                     rotation: sp.rotation || 0,
-                    text: sp.text || ''
+                    text: sp.text || '',
+                    textPosition: sp.textPosition || 'top'
                 };
 
                 if (sp.type === 'info') {
