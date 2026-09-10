@@ -10,7 +10,7 @@
         :root {
             --spot-size: 40px;
             --spot-opacity: 0.85;
-            --spot-color: #f5b301;
+            --spot-default-color: #f5b301;
         }
 
         * { box-sizing: border-box; }
@@ -93,7 +93,7 @@
             display: block !important;
             position: absolute !important;
             border-radius: 50% !important;
-            background: var(--spot-color) !important;
+            background-color: var(--spot-default-color);
             border: 2px solid #ffffff !important;
             box-shadow: 0 0 8px rgba(0, 0, 0, 0.6) !important;
             transition: none !important;
@@ -102,7 +102,7 @@
 
         .pnlm-hotspot-base:hover {
             opacity: 1 !important;
-            background: #ffffff !important;
+            background-color: #ffffff !important;
         }
 
         /* SETA RIGOROSAMENTE CENTRALIZADA */
@@ -130,7 +130,7 @@
         }
 
         .pnlm-hotspot-base:hover .spot-arrow-center svg {
-            fill: var(--spot-color) !important;
+            fill: var(--current-spot-color, #f5b301) !important;
         }
 
         .pnlm-tooltip,
@@ -187,7 +187,7 @@
             max-width: 85%; 
             max-height: 80%; 
             border-radius: 6px; 
-            border: 2px solid var(--spot-color); 
+            border: 2px solid #f5b301; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         #lightbox-caption { 
@@ -304,7 +304,7 @@
             <input type="url" id="modalInfoUrl" placeholder="ex: https://wa.me/... ou site">
         </div>
 
-        <!-- Seletor: Círculo Limpo ou Círculo com Seta -->
+        <!-- Seletor de Formato e Cor Individual -->
         <div class="modal-section">
             <label style="color:#f5b301; font-weight:bold; margin-top:0;">Formato do Ícone:</label>
             
@@ -319,7 +319,6 @@
                 </div>
             </div>
 
-            <!-- Bússola Visual Interativa para Direção da Seta -->
             <div id="compassDirectionWrap" style="margin-top: 10px;">
                 <label style="text-align: center; color: #fff;">🧭 Aponte a direção absoluta da seta:</label>
                 <div id="dial-container" onmousedown="startDialDrag(event)">
@@ -328,8 +327,8 @@
                 </div>
             </div>
 
-            <label style="margin-top:8px;">Cor do Marcador:</label>
-            <input type="color" id="spotColorInput" value="#f5b301" onchange="updateSpotStyle()">
+            <label style="margin-top:8px;">Cor deste Marcador (salva no JSON):</label>
+            <input type="color" id="spotColorInput" value="#f5b301">
             <div class="color-presets">
                 <div class="color-dot" style="background:#f5b301;" onclick="setPresetColor('#f5b301')"></div>
                 <div class="color-dot" style="background:#3b82f6;" onclick="setPresetColor('#3b82f6')"></div>
@@ -361,14 +360,14 @@
 
 <script>
     var tourData = {
-        "default": { "firstScene": "", "autoLoad": true, "sceneFadeDuration": 800 },
+        "default": { "firstScene": "", "autoLoad": true, "sceneFadeDuration": 800, "spotSize": 40, "spotOpacity": 85 },
         "scenes": {}
     };
 
     var viewer = null;
     var currentSceneId = "";
-    var originSceneBeforeAlign = ""; // Armazena a cena de origem ao alinhar
-    var isAligningView = false;      // Trava de alinhamento
+    var originSceneBeforeAlign = "";
+    var isAligningView = false;
     var tempCoords = null;
     var tempTargetYaw = 0;
     var currentSelectedShape = "shape-arrow";
@@ -381,7 +380,6 @@
     var availableRepoImages = [];
     var arrowNodes = [];
 
-    // Bússola Visual
     function startDialDrag(e) {
         isDialDragging = true;
         updateDialFromMouse(e);
@@ -420,21 +418,38 @@
     }
 
     function updateSpotStyle() {
-        var size = document.getElementById('inputSpotSize').value;
-        var opacity = document.getElementById('inputSpotOpacity').value;
-        var color = document.getElementById('spotColorInput').value;
+        var size = parseInt(document.getElementById('inputSpotSize').value, 10);
+        var opacity = parseInt(document.getElementById('inputSpotOpacity').value, 10);
 
         document.getElementById('labelSize').innerText = 'Tamanho: ' + size + 'px';
         document.getElementById('labelOpacity').innerText = 'Opacidade: ' + opacity + '%';
 
         document.documentElement.style.setProperty('--spot-size', size + 'px');
         document.documentElement.style.setProperty('--spot-opacity', (opacity / 100));
-        document.documentElement.style.setProperty('--spot-color', color);
+
+        // Guarda diretamente no objeto global do tour
+        tourData.default.spotSize = size;
+        tourData.default.spotOpacity = opacity;
+    }
+
+    function applyLoadedStyle(size, opacity) {
+        size = size || 40;
+        opacity = opacity || 85;
+
+        document.getElementById('inputSpotSize').value = size;
+        document.getElementById('inputSpotOpacity').value = opacity;
+        document.getElementById('labelSize').innerText = 'Tamanho: ' + size + 'px';
+        document.getElementById('labelOpacity').innerText = 'Opacidade: ' + opacity + '%';
+
+        document.documentElement.style.setProperty('--spot-size', size + 'px');
+        document.documentElement.style.setProperty('--spot-opacity', (opacity / 100));
+
+        tourData.default.spotSize = size;
+        tourData.default.spotOpacity = opacity;
     }
 
     function setPresetColor(hex) {
         document.getElementById('spotColorInput').value = hex;
-        updateSpotStyle();
     }
 
     window.addEventListener('load', function() {
@@ -470,6 +485,11 @@
 
     function exportTourFile() {
         if (Object.keys(tourData.scenes).length === 0) return alert('Nenhum ambiente adicionado ainda!');
+        
+        // Garante que tamanho e opacidade atuais estejam gravados antes de exportar
+        tourData.default.spotSize = parseInt(document.getElementById('inputSpotSize').value, 10);
+        tourData.default.spotOpacity = parseInt(document.getElementById('inputSpotOpacity').value, 10);
+
         var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tourData, null, 4));
         var downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
@@ -488,6 +508,10 @@
                 var loadedData = JSON.parse(evt.target.result);
                 if (loadedData.scenes && loadedData.default) {
                     tourData = loadedData;
+                    
+                    // Aplica tamanho e opacidade salvos no arquivo
+                    applyLoadedStyle(tourData.default.spotSize, tourData.default.spotOpacity);
+
                     var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
                     currentSceneId = firstScene;
                     renderScenesList();
@@ -665,6 +689,10 @@
                 sp.cssClass = shapeClass;
 
                 sp.createTooltipFunc = function(hotSpotDiv, args) {
+                    var spotColor = args.color || '#f5b301';
+                    hotSpotDiv.style.backgroundColor = spotColor;
+                    hotSpotDiv.style.setProperty('--current-spot-color', spotColor);
+
                     if (args.shape === 'shape-arrow') {
                         var arrowDiv = document.createElement('div');
                         arrowDiv.className = 'spot-arrow-center';
@@ -685,7 +713,8 @@
                     shape: shapeClass,
                     rotation: sp.rotation || 0,
                     text: sp.text || '',
-                    textPosition: sp.textPosition || 'top'
+                    textPosition: sp.textPosition || 'top',
+                    color: sp.color || '#f5b301'
                 };
 
                 if (sp.type === 'info') {
@@ -710,9 +739,8 @@
             "scenes": cleanScenes
         });
 
-        // Sincronização segura: NÃO atualiza currentSceneId se estiver alinhando visão
         viewer.on('scenechange', function(newSceneId) {
-            if (isAligningView) return; // Trava ativada: ignora para manter a cena de origem
+            if (isAligningView) return;
             if (currentSceneId !== newSceneId && tourData.scenes[newSceneId]) {
                 currentSceneId = newSceneId;
                 renderScenesList();
@@ -740,6 +768,7 @@
                     document.getElementById('modalTitleText').innerText = 'Adicionar Ponto Interativo';
                     document.getElementById('dial-needle').style.transform = 'rotate(0deg)';
                     document.getElementById('yawInfoText').innerText = 'Usando visão padrão (0°)';
+                    document.getElementById('spotColorInput').value = '#f5b301';
                     openModal();
                 }
             }
@@ -797,6 +826,8 @@
         document.getElementById('modalTextPositionSelect').value = pos;
         document.getElementById('modalInfoTextPositionSelect').value = pos;
 
+        document.getElementById('spotColorInput').value = spot.color || '#f5b301';
+
         if (spot.type === 'scene') {
             document.getElementById('modalTargetScene').value = spot.sceneId || '';
             document.getElementById('modalText').value = spot.text || '';
@@ -846,8 +877,8 @@
         var targetSceneId = document.getElementById('modalTargetScene').value;
         if (!targetSceneId) return alert('Selecione um cômodo de destino!');
         
-        originSceneBeforeAlign = currentSceneId; // Guarda a cena de origem com segurança
-        isAligningView = true;                   // Ativa a trava para não trocar a cena de gravação
+        originSceneBeforeAlign = currentSceneId;
+        isAligningView = true;
         
         document.getElementById('modal-overlay').style.display = 'none';
         viewer.loadScene(targetSceneId);
@@ -858,12 +889,10 @@
         tempTargetYaw = Math.round(viewer.getYaw());
         document.getElementById('align-banner').style.display = 'none';
         
-        // Retorna com precisão para a cena original
         currentSceneId = originSceneBeforeAlign;
         viewer.loadScene(currentSceneId);
         
-        isAligningView = false; // Desativa a trava
-        
+        isAligningView = false;
         document.getElementById('yawInfoText').innerText = '✓ Alinhado em: ' + tempTargetYaw + '°';
         document.getElementById('modal-overlay').style.display = 'flex';
     }
@@ -882,12 +911,14 @@
         var textPos = (type === 'scene') 
             ? document.getElementById('modalTextPositionSelect').value 
             : document.getElementById('modalInfoTextPositionSelect').value;
+        var chosenColor = document.getElementById('spotColorInput').value || '#f5b301';
 
         var spotObj = {
             "pitch": parseFloat(tempCoords[0].toFixed(2)),
             "yaw": parseFloat(tempCoords[1].toFixed(2)),
             "type": type,
             "shape": currentSelectedShape,
+            "color": chosenColor,
             "textPosition": textPos,
             "rotation": (currentSelectedShape === 'shape-arrow') ? visualArrowAngle : 0
         };
