@@ -29,7 +29,12 @@
             height: 100%;
         }
 
-        /* OVERLAY DE MARCA E LEAD GENERATION */
+        /* OCULTA O BOX DE LOADING DURANTE TRANSIÇÕES PARA FICAR FLUIDO */
+        .pnlm-load-box {
+            display: none !important;
+        }
+
+        /* OVERLAY DE MARCA E LEAD GENERATION (CANTO SUPERIOR DIREITO) */
         #brand-overlay {
             position: absolute;
             top: 20px;
@@ -112,7 +117,7 @@
             background: #20ba5a;
         }
 
-        /* MARCADOR BASE 2D RIGOROSAMENTE SEM TRANSITION (CORREÇÃO DO DELAY) */
+        /* MARCADOR BASE 2D SEM TRANSITION (ZERO DELAY) */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -135,7 +140,7 @@
             background-color: #ffffff !important;
         }
 
-        /* SETA CENTRALIZADA */
+        /* SETA CENTRALIZADA ORIENTADA AO TOUR */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -233,6 +238,7 @@
 <body>
     <div id="panorama"></div>
 
+    <!-- OVERLAY DE MARCA E CONTATO -->
     <div id="brand-overlay" class="hidden">
         <div class="brand-header-wrap">
             <img id="brand-logo-img" src="" alt="Logo">
@@ -306,23 +312,20 @@
             }
         }
 
-        function executeWalkthrough(targetSceneId, targetPitch, targetYaw, spotPitch, spotYaw) {
+        // TRANSIÇÃO FLUIDA: AVANÇO SUAVE SEM TRANCAS OU CAIXA DE LOADING
+        function executeSmoothWalk(targetSceneId, targetYaw, spotPitch, spotYaw) {
             if (isTransitioning || !viewer) return;
             isTransitioning = true;
 
-            var defaultHfov = 100;
+            // 1. Gira a câmera suavemente na direção da passagem
+            viewer.lookAt(spotPitch, spotYaw, viewer.getHfov(), 300);
 
-            viewer.lookAt(spotPitch, spotYaw, 35, 450);
-
+            // 2. Carrega a próxima cena com crossfade suave mantendo o campo de visão constante
             setTimeout(function() {
                 var arrivalYaw = (targetYaw !== undefined && targetYaw !== null) ? targetYaw : 0;
-                viewer.loadScene(targetSceneId, 0, arrivalYaw, 60);
-
-                setTimeout(function() {
-                    viewer.setHfov(defaultHfov, 500);
-                    isTransitioning = false;
-                }, 200);
-            }, 450);
+                viewer.loadScene(targetSceneId, 0, arrivalYaw, viewer.getHfov());
+                isTransitioning = false;
+            }, 250);
         }
 
         fetch('tour_config.json')
@@ -338,8 +341,8 @@
                     if (tourData.default.spotOpacity) {
                         document.documentElement.style.setProperty('--spot-opacity', (tourData.default.spotOpacity / 100));
                     }
-                    tourData.default.sceneFadeDuration = 400;
-                    tourData.default.hfov = 100;
+                    // Dissolve contínuo e rápido
+                    tourData.default.sceneFadeDuration = 500;
                 }
 
                 if (tourData.branding) {
@@ -388,7 +391,7 @@
 
                             sp.sceneId = undefined;
                             sp.clickHandlerFunc = function() {
-                                executeWalkthrough(destSceneId, 0, destTargetYaw, sPitch, sYaw);
+                                executeSmoothWalk(destSceneId, destTargetYaw, sPitch, sYaw);
                             };
                         } else if (sp.type === 'info') {
                             sp.clickHandlerFunc = (function(spot) {
