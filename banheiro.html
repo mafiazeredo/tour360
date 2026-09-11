@@ -11,6 +11,7 @@
             --spot-size: 40px;
             --spot-opacity: 0.85;
             --spot-default-color: #f5b301;
+            --brand-card-opacity: 0.88;
         }
 
         html, body {
@@ -28,13 +29,14 @@
             height: 100%;
         }
 
-        /* OVERLAY DE MARCA E LEAD GENERATION (TOPO DIREITO) */
+        /* OVERLAY DE MARCA E LEAD GENERATION (CANTO SUPERIOR DIREITO) */
         #brand-overlay {
             position: absolute;
             top: 20px;
             right: 20px;
+            left: auto;
             z-index: 95;
-            background: rgba(18, 21, 27, 0.88);
+            background: rgba(18, 21, 27, var(--brand-card-opacity));
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 8px;
@@ -44,7 +46,7 @@
             flex-direction: column;
             gap: 8px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-            transition: all 0.2s ease;
+            transition: background 0.15s ease;
         }
 
         #brand-overlay.hidden {
@@ -231,7 +233,7 @@
 <body>
     <div id="panorama"></div>
 
-    <!-- OVERLAY DE MARCA E CONTATO -->
+    <!-- OVERLAY DE MARCA E CONTATO (CANTO SUPERIOR DIREITO) -->
     <div id="brand-overlay" class="hidden">
         <div class="brand-header-wrap">
             <img id="brand-logo-img" src="" alt="Logo">
@@ -279,6 +281,10 @@
                 return;
             }
 
+            // Aplica a opacidade configurada no JSON (se não houver, usa 88% padrão)
+            var cardOp = (b.cardOpacity !== undefined) ? (b.cardOpacity / 100) : 0.88;
+            document.documentElement.style.setProperty('--brand-card-opacity', cardOp);
+
             overlay.classList.remove('hidden');
             titleEl.innerText = b.title || 'Tour Virtual 360°';
             subEl.innerText = b.subtitle || '';
@@ -307,7 +313,7 @@
                 return response.json();
             })
             .then(function(tourData) {
-                // 1. Aplica Tamanho e Opacidade globais do JSON
+                // 1. Aplica Tamanho e Opacidade dos hotspots
                 if (tourData.default) {
                     if (tourData.default.spotSize) {
                         document.documentElement.style.setProperty('--spot-size', tourData.default.spotSize + 'px');
@@ -317,7 +323,7 @@
                     }
                 }
 
-                // 2. Aplica Overlay de Marca e Contato se existir no JSON
+                // 2. Aplica Overlay de Marca, Contato e Transparência
                 if (tourData.branding) {
                     renderBrandOverlay(tourData.branding);
                 }
