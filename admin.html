@@ -70,6 +70,88 @@
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
+        /* OVERLAY DE MARCA E CONTATO (TOPO ESQUERDO) */
+        #brand-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 95;
+            background: rgba(18, 21, 27, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 12px 14px;
+            max-width: 270px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            transition: all 0.2s ease;
+        }
+
+        #brand-overlay.hidden {
+            display: none !important;
+        }
+
+        .brand-header-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #brand-logo-img {
+            max-width: 44px;
+            max-height: 44px;
+            object-fit: contain;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .brand-text-wrap {
+            overflow: hidden;
+        }
+
+        #brand-company-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+            margin: 0;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #brand-company-subtitle {
+            font-size: 11px;
+            color: #94a3b8;
+            margin: 2px 0 0 0;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #brand-whatsapp-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #25d366;
+            color: #fff;
+            text-decoration: none;
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
+            transition: background 0.15s ease;
+        }
+
+        #brand-whatsapp-btn:hover {
+            background: #20ba5a;
+        }
+
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
         #modal-box { background: #1a1e26; border: 1px solid #3b4457; border-radius: 10px; width: 420px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         #modal-box h3 { margin: 0 0 10px 0; font-size: 15px; color: #f5b301; }
@@ -105,7 +187,7 @@
             background-color: #ffffff !important;
         }
 
-        /* SETA ORIENTADA AO TOUR (FIXA NA PERSPECTIVA DO PONTO) */
+        /* SETA ORIENTADA AO TOUR */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -214,6 +296,25 @@
             <input type="file" id="loadTourFileInput" accept=".json" onchange="importTourFile(event)">
         </div>
 
+        <!-- SEÇÃO CONFIGURÁVEL: MARCA & LEAD GENERATION -->
+        <div class="card">
+            <div class="card-title">🏷️ Marca & Contato (Lead Gen)</div>
+            <label>Título / Nome da Empresa ou Imóvel:</label>
+            <input type="text" id="inputBrandTitle" placeholder="ex: Imobiliária Prime ou Mansão Barra" oninput="updateBrandOverlay()">
+
+            <label>Subtítulo / Telefone Visível:</label>
+            <input type="text" id="inputBrandSubtitle" placeholder="ex: Creci 12345 | (21) 99999-9999" oninput="updateBrandOverlay()">
+
+            <label>URL ou Nome do Arquivo do Logo (opcional):</label>
+            <input type="text" id="inputBrandLogo" placeholder="ex: logo.png ou https://..." oninput="updateBrandOverlay()">
+
+            <label>WhatsApp (somente números com DDD):</label>
+            <input type="text" id="inputBrandWhatsapp" placeholder="ex: 5521999999999" oninput="updateBrandOverlay()">
+
+            <label>Texto do Botão de Ação:</label>
+            <input type="text" id="inputBrandBtnText" value="Falar no WhatsApp" placeholder="ex: Falar com o Corretor" oninput="updateBrandOverlay()">
+        </div>
+
         <div class="card">
             <div class="card-title"><span class="step-number">1</span> Ambientes (Cenas)</div>
             <label>Foto Equirretangular do Repositório:</label>
@@ -239,6 +340,22 @@
 
 <div id="panorama-wrap">
     <div id="panorama"></div>
+
+    <!-- OVERLAY FLUTUANTE DE MARCA E LEAD (PREVIEW EM TEMPO REAL) -->
+    <div id="brand-overlay" class="hidden">
+        <div class="brand-header-wrap">
+            <img id="brand-logo-img" src="" alt="Logo">
+            <div class="brand-text-wrap">
+                <div id="brand-company-title"></div>
+                <div id="brand-company-subtitle"></div>
+            </div>
+        </div>
+        <a id="brand-whatsapp-btn" href="#" target="_blank">
+            <span>💬</span>
+            <span id="brand-btn-label">Falar no WhatsApp</span>
+        </a>
+    </div>
+
     <div id="instruction-banner"><span id="instructionText">Adicione um ambiente ou carregue um tour para começar.</span></div>
     <div id="align-banner">
         <p>🔄 Gire até olhar para o ponto de entrada deste ambiente.</p>
@@ -361,6 +478,13 @@
 <script>
     var tourData = {
         "default": { "firstScene": "", "autoLoad": true, "sceneFadeDuration": 800, "spotSize": 40, "spotOpacity": 85 },
+        "branding": {
+            "title": "",
+            "subtitle": "",
+            "logo": "",
+            "whatsapp": "",
+            "btnText": "Falar no WhatsApp"
+        },
         "scenes": {}
     };
 
@@ -378,6 +502,65 @@
     var isDialDragging = false;
     var startX = 0, startY = 0;
     var availableRepoImages = [];
+
+    // ATUALIZAÇÃO DO OVERLAY DE MARCA (PREVIEW)
+    function updateBrandOverlay() {
+        var title = document.getElementById('inputBrandTitle').value.trim();
+        var subtitle = document.getElementById('inputBrandSubtitle').value.trim();
+        var logo = document.getElementById('inputBrandLogo').value.trim();
+        var whatsapp = document.getElementById('inputBrandWhatsapp').value.trim().replace(/\D/g, '');
+        var btnText = document.getElementById('inputBrandBtnText').value.trim() || 'Falar no WhatsApp';
+
+        tourData.branding = {
+            "title": title,
+            "subtitle": subtitle,
+            "logo": logo,
+            "whatsapp": whatsapp,
+            "btnText": btnText
+        };
+
+        var overlay = document.getElementById('brand-overlay');
+        var titleEl = document.getElementById('brand-company-title');
+        var subEl = document.getElementById('brand-company-subtitle');
+        var logoEl = document.getElementById('brand-logo-img');
+        var waBtn = document.getElementById('brand-whatsapp-btn');
+        var btnLabel = document.getElementById('brand-btn-label');
+
+        if (!title && !subtitle && !logo && !whatsapp) {
+            overlay.classList.add('hidden');
+            return;
+        }
+
+        overlay.classList.remove('hidden');
+        titleEl.innerText = title || 'Tour Virtual 360°';
+        subEl.innerText = subtitle || '';
+        subEl.style.display = subtitle ? 'block' : 'none';
+
+        if (logo) {
+            logoEl.src = logo;
+            logoEl.style.display = 'block';
+        } else {
+            logoEl.style.display = 'none';
+        }
+
+        if (whatsapp) {
+            waBtn.style.display = 'flex';
+            waBtn.href = 'https://wa.me/' + whatsapp;
+            btnLabel.innerText = btnText;
+        } else {
+            waBtn.style.display = 'none';
+        }
+    }
+
+    function applyLoadedBranding(b) {
+        b = b || {};
+        document.getElementById('inputBrandTitle').value = b.title || '';
+        document.getElementById('inputBrandSubtitle').value = b.subtitle || '';
+        document.getElementById('inputBrandLogo').value = b.logo || '';
+        document.getElementById('inputBrandWhatsapp').value = b.whatsapp || '';
+        document.getElementById('inputBrandBtnText').value = b.btnText || 'Falar no WhatsApp';
+        updateBrandOverlay();
+    }
 
     function startDialDrag(e) {
         isDialDragging = true;
@@ -486,6 +669,7 @@
         
         tourData.default.spotSize = parseInt(document.getElementById('inputSpotSize').value, 10);
         tourData.default.spotOpacity = parseInt(document.getElementById('inputSpotOpacity').value, 10);
+        updateBrandOverlay();
 
         var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tourData, null, 4));
         var downloadAnchor = document.createElement('a');
@@ -507,6 +691,7 @@
                     tourData = loadedData;
                     
                     applyLoadedStyle(tourData.default.spotSize, tourData.default.spotOpacity);
+                    applyLoadedBranding(tourData.branding);
 
                     var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
                     currentSceneId = firstScene;
@@ -675,7 +860,6 @@
                     hotSpotDiv.style.backgroundColor = spotColor;
                     hotSpotDiv.style.setProperty('--current-spot-color', spotColor);
 
-                    // Seta orientada ao ponto no espaço (fixa na direção calibrada)
                     if (args.shape === 'shape-arrow') {
                         var arrowDiv = document.createElement('div');
                         arrowDiv.className = 'spot-arrow-center';
