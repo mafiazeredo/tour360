@@ -28,6 +28,88 @@
             height: 100%;
         }
 
+        /* OVERLAY DE MARCA E LEAD GENERATION (TOPO ESQUERDO) */
+        #brand-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 95;
+            background: rgba(18, 21, 27, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 12px 14px;
+            max-width: 270px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            transition: all 0.2s ease;
+        }
+
+        #brand-overlay.hidden {
+            display: none !important;
+        }
+
+        .brand-header-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #brand-logo-img {
+            max-width: 44px;
+            max-height: 44px;
+            object-fit: contain;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .brand-text-wrap {
+            overflow: hidden;
+        }
+
+        #brand-company-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+            margin: 0;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #brand-company-subtitle {
+            font-size: 11px;
+            color: #94a3b8;
+            margin: 2px 0 0 0;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #brand-whatsapp-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #25d366;
+            color: #fff;
+            text-decoration: none;
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
+            transition: background 0.15s ease;
+        }
+
+        #brand-whatsapp-btn:hover {
+            background: #20ba5a;
+        }
+
         /* Marcador Base 2D Circular */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
@@ -51,7 +133,7 @@
             background-color: #ffffff !important;
         }
 
-        /* Seta Centralizada Orientada ao Tour (Fixa na perspectiva do ponto) */
+        /* Seta Centralizada Orientada ao Tour */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -114,7 +196,7 @@
             bottom: auto !important;
         }
 
-        /* Lightbox para visualização de fotos */
+        /* Lightbox para fotos de detalhe */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -149,6 +231,21 @@
 <body>
     <div id="panorama"></div>
 
+    <!-- OVERLAY DE MARCA E CONTATO -->
+    <div id="brand-overlay" class="hidden">
+        <div class="brand-header-wrap">
+            <img id="brand-logo-img" src="" alt="Logo">
+            <div class="brand-text-wrap">
+                <div id="brand-company-title"></div>
+                <div id="brand-company-subtitle"></div>
+            </div>
+        </div>
+        <a id="brand-whatsapp-btn" href="#" target="_blank">
+            <span>💬</span>
+            <span id="brand-btn-label">Falar no WhatsApp</span>
+        </a>
+    </div>
+
     <div id="lightbox-overlay" onclick="closeLightbox()">
         <img id="lightbox-img" src="" alt="Detalhe">
         <div id="lightbox-caption"></div>
@@ -168,6 +265,42 @@
             document.getElementById('lightbox-overlay').style.display = 'none';
         }
 
+        function renderBrandOverlay(b) {
+            if (!b) return;
+            var overlay = document.getElementById('brand-overlay');
+            var titleEl = document.getElementById('brand-company-title');
+            var subEl = document.getElementById('brand-company-subtitle');
+            var logoEl = document.getElementById('brand-logo-img');
+            var waBtn = document.getElementById('brand-whatsapp-btn');
+            var btnLabel = document.getElementById('brand-btn-label');
+
+            if (!b.title && !b.subtitle && !b.logo && !b.whatsapp) {
+                overlay.classList.add('hidden');
+                return;
+            }
+
+            overlay.classList.remove('hidden');
+            titleEl.innerText = b.title || 'Tour Virtual 360°';
+            subEl.innerText = b.subtitle || '';
+            subEl.style.display = b.subtitle ? 'block' : 'none';
+
+            if (b.logo) {
+                logoEl.src = b.logo;
+                logoEl.style.display = 'block';
+            } else {
+                logoEl.style.display = 'none';
+            }
+
+            if (b.whatsapp) {
+                var cleanNumber = b.whatsapp.toString().replace(/\D/g, '');
+                waBtn.style.display = 'flex';
+                waBtn.href = 'https://wa.me/' + cleanNumber;
+                btnLabel.innerText = b.btnText || 'Falar no WhatsApp';
+            } else {
+                waBtn.style.display = 'none';
+            }
+        }
+
         fetch('tour_config.json')
             .then(function(response) {
                 if (!response.ok) throw new Error('Não foi possível encontrar o arquivo tour_config.json');
@@ -184,7 +317,12 @@
                     }
                 }
 
-                // 2. Configura os hotspots com cor individual, seta orientada e posição de texto
+                // 2. Aplica Overlay de Marca e Contato se existir no JSON
+                if (tourData.branding) {
+                    renderBrandOverlay(tourData.branding);
+                }
+
+                // 3. Prepara os hotspots da cena
                 for (var sc in tourData.scenes) {
                     tourData.scenes[sc].hotSpots.forEach(function(sp) {
                         var shapeClass = sp.shape || 'shape-arrow';
@@ -195,7 +333,6 @@
                             hotSpotDiv.style.backgroundColor = spotColor;
                             hotSpotDiv.style.setProperty('--current-spot-color', spotColor);
 
-                            // Seta com ângulo fixado na direção da passagem
                             if (args.shape === 'shape-arrow') {
                                 var arrowDiv = document.createElement('div');
                                 arrowDiv.className = 'spot-arrow-center';
@@ -204,7 +341,6 @@
                                 hotSpotDiv.appendChild(arrowDiv);
                             }
 
-                            // Texto descritivo posicionado acima ou abaixo
                             if (args.text && args.text.trim() !== '') {
                                 var labelDiv = document.createElement('div');
                                 labelDiv.className = 'spot-label ' + (args.textPosition === 'bottom' ? 'pos-bottom' : 'pos-top');
