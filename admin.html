@@ -11,6 +11,7 @@
             --spot-size: 40px;
             --spot-opacity: 0.85;
             --spot-default-color: #f5b301;
+            --brand-card-opacity: 0.88;
         }
 
         * { box-sizing: border-box; }
@@ -70,13 +71,14 @@
         #instruction-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(20, 23, 31, 0.94); border: 1px solid #f5b301; padding: 10px 16px; border-radius: 8px; z-index: 100; pointer-events: none; }
         #instruction-banner span { font-size: 13px; font-weight: 500; }
         
-        /* OVERLAY DE MARCA E CONTATO (TOPO DIREITO) */
+        /* OVERLAY DE MARCA E CONTATO (TOPO DIREITO COM TRANSPARÊNCIA DINÂMICA) */
         #brand-overlay {
             position: absolute;
             top: 20px;
             right: 20px;
+            left: auto;
             z-index: 95;
-            background: rgba(18, 21, 27, 0.88);
+            background: rgba(18, 21, 27, var(--brand-card-opacity));
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 8px;
@@ -86,7 +88,7 @@
             flex-direction: column;
             gap: 8px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-            transition: all 0.2s ease;
+            transition: background 0.15s ease;
         }
 
         #brand-overlay.hidden {
@@ -296,7 +298,7 @@
             <input type="file" id="loadTourFileInput" accept=".json" onchange="importTourFile(event)">
         </div>
 
-        <!-- SEÇÃO CONFIGURÁVEL: MARCA & LEAD GENERATION -->
+        <!-- SEÇÃO CONFIGURÁVEL: MARCA & LEAD GENERATION COM TRANSPARÊNCIA -->
         <div class="card">
             <div class="card-title">🏷️ Marca & Contato (Lead Gen)</div>
             <label>Título / Nome da Empresa ou Imóvel:</label>
@@ -313,6 +315,9 @@
 
             <label>Texto do Botão de Ação:</label>
             <input type="text" id="inputBrandBtnText" value="Falar no WhatsApp" placeholder="ex: Falar com o Corretor" oninput="updateBrandOverlay()">
+
+            <label id="labelCardOpacity" style="margin-top:8px;">Opacidade do Card: 88%</label>
+            <input type="range" id="inputCardOpacity" min="30" max="100" value="88" oninput="updateBrandOverlay()">
         </div>
 
         <div class="card">
@@ -341,7 +346,7 @@
 <div id="panorama-wrap">
     <div id="panorama"></div>
 
-    <!-- OVERLAY FLUTUANTE DE MARCA E LEAD (PREVIEW EM TEMPO REAL) -->
+    <!-- OVERLAY DE MARCA E LEAD (CANTO SUPERIOR DIREITO) -->
     <div id="brand-overlay" class="hidden">
         <div class="brand-header-wrap">
             <img id="brand-logo-img" src="" alt="Logo">
@@ -483,7 +488,8 @@
             "subtitle": "",
             "logo": "",
             "whatsapp": "",
-            "btnText": "Falar no WhatsApp"
+            "btnText": "Falar no WhatsApp",
+            "cardOpacity": 88
         },
         "scenes": {}
     };
@@ -503,20 +509,25 @@
     var startX = 0, startY = 0;
     var availableRepoImages = [];
 
-    // ATUALIZAÇÃO DO OVERLAY DE MARCA (PREVIEW)
+    // ATUALIZAÇÃO DO OVERLAY DE MARCA (PREVIEW COM TRANSPARÊNCIA DINÂMICA)
     function updateBrandOverlay() {
         var title = document.getElementById('inputBrandTitle').value.trim();
         var subtitle = document.getElementById('inputBrandSubtitle').value.trim();
         var logo = document.getElementById('inputBrandLogo').value.trim();
         var whatsapp = document.getElementById('inputBrandWhatsapp').value.trim().replace(/\D/g, '');
         var btnText = document.getElementById('inputBrandBtnText').value.trim() || 'Falar no WhatsApp';
+        var cardOpacity = parseInt(document.getElementById('inputCardOpacity').value, 10);
+
+        document.getElementById('labelCardOpacity').innerText = 'Opacidade do Card: ' + cardOpacity + '%';
+        document.documentElement.style.setProperty('--brand-card-opacity', (cardOpacity / 100));
 
         tourData.branding = {
             "title": title,
             "subtitle": subtitle,
             "logo": logo,
             "whatsapp": whatsapp,
-            "btnText": btnText
+            "btnText": btnText,
+            "cardOpacity": cardOpacity
         };
 
         var overlay = document.getElementById('brand-overlay');
@@ -559,6 +570,9 @@
         document.getElementById('inputBrandLogo').value = b.logo || '';
         document.getElementById('inputBrandWhatsapp').value = b.whatsapp || '';
         document.getElementById('inputBrandBtnText').value = b.btnText || 'Falar no WhatsApp';
+        
+        var op = (b.cardOpacity !== undefined) ? b.cardOpacity : 88;
+        document.getElementById('inputCardOpacity').value = op;
         updateBrandOverlay();
     }
 
