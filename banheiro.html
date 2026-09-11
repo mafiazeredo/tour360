@@ -51,7 +51,7 @@
             background-color: #ffffff !important;
         }
 
-        /* Seta Centralizada com Giro Sincronizado */
+        /* Seta Centralizada Orientada ao Tour (Fixa na perspectiva do ponto) */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -157,7 +157,6 @@
 
     <script>
         var viewer = null;
-        var arrowNodes = [];
 
         function openLightbox(src, caption) {
             document.getElementById('lightbox-img').src = src;
@@ -169,21 +168,6 @@
             document.getElementById('lightbox-overlay').style.display = 'none';
         }
 
-        // Acompanhamento suave e contínuo do giro da câmera
-        function updateArrowsRotation() {
-            if (!viewer) return;
-            var currentYaw = viewer.getYaw();
-            for (var i = 0; i < arrowNodes.length; i++) {
-                var item = arrowNodes[i];
-                if (item.elem) {
-                    var relativeAngle = item.baseAngle - currentYaw;
-                    item.elem.style.transform = 'rotate(' + relativeAngle + 'deg)';
-                }
-            }
-            requestAnimationFrame(updateArrowsRotation);
-        }
-
-        // Lê o arquivo JSON com todas as customizações salvas
         fetch('tour_config.json')
             .then(function(response) {
                 if (!response.ok) throw new Error('Não foi possível encontrar o arquivo tour_config.json');
@@ -200,7 +184,7 @@
                     }
                 }
 
-                // 2. Prepara cada hotspot com sua cor individual, seta e posição do texto
+                // 2. Configura os hotspots com cor individual, seta orientada e posição de texto
                 for (var sc in tourData.scenes) {
                     tourData.scenes[sc].hotSpots.forEach(function(sp) {
                         var shapeClass = sp.shape || 'shape-arrow';
@@ -211,16 +195,16 @@
                             hotSpotDiv.style.backgroundColor = spotColor;
                             hotSpotDiv.style.setProperty('--current-spot-color', spotColor);
 
-                            // Insere seta no centro se for o caso
+                            // Seta com ângulo fixado na direção da passagem
                             if (args.shape === 'shape-arrow') {
                                 var arrowDiv = document.createElement('div');
                                 arrowDiv.className = 'spot-arrow-center';
+                                arrowDiv.style.transform = 'rotate(' + (args.rotation || 0) + 'deg)';
                                 arrowDiv.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3l8 17-8-5-8 5z"/></svg>';
                                 hotSpotDiv.appendChild(arrowDiv);
-                                arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
                             }
 
-                            // Insere texto descritivo na posição configurada
+                            // Texto descritivo posicionado acima ou abaixo
                             if (args.text && args.text.trim() !== '') {
                                 var labelDiv = document.createElement('div');
                                 labelDiv.className = 'spot-label ' + (args.textPosition === 'bottom' ? 'pos-bottom' : 'pos-top');
@@ -237,7 +221,6 @@
                             color: sp.color || '#f5b301'
                         };
 
-                        // Ação de clique para pontos de foto ou link
                         if (sp.type === 'info') {
                             sp.clickHandlerFunc = (function(spot) {
                                 return function() {
@@ -258,8 +241,6 @@
                 if (aboutBox) {
                     aboutBox.innerHTML = '<a href="https://marcellofotografia.com.br" target="_blank" style="color:#fff; text-decoration:none;">Marcello Fotografia | Tour 360°</a>';
                 }
-
-                requestAnimationFrame(updateArrowsRotation);
             })
             .catch(function(err) {
                 console.error(err);
