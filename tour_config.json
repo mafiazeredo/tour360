@@ -247,6 +247,7 @@
         "subtitle": "Tour 360°",
         "logo": "https://alfred.alboompro.com/resize/width/370/height/150/quality/99/url/storage.alboom.ninja/sites/113929/img/logo/logo.png?t=1656883587",
         "whatsapp": "5521975953310",
-        "btnText": "Falar no WhatsApp"
+        "btnText": "Falar no WhatsApp",
+        "cardOpacity": 42
     }
 }
