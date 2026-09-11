@@ -126,13 +126,14 @@
             background-color: var(--spot-default-color);
             border: 2px solid #ffffff !important;
             box-shadow: 0 0 8px rgba(0, 0, 0, 0.6) !important;
-            transition: none !important;
+            transition: transform 0.2s ease, opacity 0.2s ease !important;
             overflow: visible !important;
         }
 
         .pnlm-hotspot-base:hover {
             opacity: 1 !important;
             background-color: #ffffff !important;
+            transform: scale(1.08) !important;
         }
 
         /* Seta Centralizada Orientada ao Tour */
@@ -168,7 +169,7 @@
             display: none !important;
         }
 
-        /* Texto Descritivo Afastado (Acima ou Abaixo) */
+        /* Texto Descritivo Afastado */
         .spot-label {
             position: absolute !important;
             left: 50% !important;
@@ -233,7 +234,7 @@
 <body>
     <div id="panorama"></div>
 
-    <!-- OVERLAY DE MARCA E CONTATO (CANTO SUPERIOR DIREITO) -->
+    <!-- OVERLAY DE MARCA E CONTATO -->
     <div id="brand-overlay" class="hidden">
         <div class="brand-header-wrap">
             <img id="brand-logo-img" src="" alt="Logo">
@@ -256,6 +257,7 @@
 
     <script>
         var viewer = null;
+        var isTransitioning = false;
 
         function openLightbox(src, caption) {
             document.getElementById('lightbox-img').src = src;
@@ -281,7 +283,6 @@
                 return;
             }
 
-            // Aplica a opacidade configurada no JSON (se não houver, usa 88% padrão)
             var cardOp = (b.cardOpacity !== undefined) ? (b.cardOpacity / 100) : 0.88;
             document.documentElement.style.setProperty('--brand-card-opacity', cardOp);
 
@@ -307,13 +308,35 @@
             }
         }
 
+        // EXECUÇÃO DO EFEITO WALKTHROUGH
+        function executeWalkthrough(targetSceneId, targetPitch, targetYaw, spotPitch, spotYaw) {
+            if (isTransitioning || !viewer) return;
+            isTransitioning = true;
+
+            var defaultHfov = 100; // Campo de visão padrão confortável
+
+            // 1. Gira a câmera suavemente mirando no hotspot e dá um zoom in veloz (efeito de avançar)
+            viewer.lookAt(spotPitch, spotYaw, 35, 450);
+
+            // 2. No final do avanço, carrega a cena de destino e abre o ângulo suavemente
+            setTimeout(function() {
+                var arrivalYaw = (targetYaw !== undefined && targetYaw !== null) ? targetYaw : 0;
+                viewer.loadScene(targetSceneId, 0, arrivalYaw, 60);
+
+                // 3. Suaviza a abertura da visão ao chegar no novo ambiente
+                setTimeout(function() {
+                    viewer.setHfov(defaultHfov, 500);
+                    isTransitioning = false;
+                }, 200);
+            }, 450);
+        }
+
         fetch('tour_config.json')
             .then(function(response) {
                 if (!response.ok) throw new Error('Não foi possível encontrar o arquivo tour_config.json');
                 return response.json();
             })
             .then(function(tourData) {
-                // 1. Aplica Tamanho e Opacidade dos hotspots
                 if (tourData.default) {
                     if (tourData.default.spotSize) {
                         document.documentElement.style.setProperty('--spot-size', tourData.default.spotSize + 'px');
@@ -321,14 +344,15 @@
                     if (tourData.default.spotOpacity) {
                         document.documentElement.style.setProperty('--spot-opacity', (tourData.default.spotOpacity / 100));
                     }
+                    // Define tempo de fade ideal para o walkthrough
+                    tourData.default.sceneFadeDuration = 400;
+                    tourData.default.hfov = 100;
                 }
 
-                // 2. Aplica Overlay de Marca, Contato e Transparência
                 if (tourData.branding) {
                     renderBrandOverlay(tourData.branding);
                 }
 
-                // 3. Prepara os hotspots da cena
                 for (var sc in tourData.scenes) {
                     tourData.scenes[sc].hotSpots.forEach(function(sp) {
                         var shapeClass = sp.shape || 'shape-arrow';
@@ -363,7 +387,19 @@
                             color: sp.color || '#f5b301'
                         };
 
-                        if (sp.type === 'info') {
+                        // Se for passagem de cômodo, aplica o Walkthrough cinematográfico
+                        if (sp.type === 'scene') {
+                            var destSceneId = sp.sceneId;
+                            var destTargetYaw = sp.targetYaw;
+                            var sPitch = sp.pitch;
+                            var sYaw = sp.yaw;
+
+                            // Remove o click padrão do Pannellum para acionar a nossa função
+                            sp.sceneId = undefined;
+                            sp.clickHandlerFunc = function() {
+                                executeWalkthrough(destSceneId, 0, destTargetYaw, sPitch, sYaw);
+                            };
+                        } else if (sp.type === 'info') {
                             sp.clickHandlerFunc = (function(spot) {
                                 return function() {
                                     if (spot.image) {
