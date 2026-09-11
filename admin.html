@@ -105,7 +105,7 @@
             background-color: #ffffff !important;
         }
 
-        /* SETA RIGOROSAMENTE CENTRALIZADA */
+        /* SETA ORIENTADA AO TOUR (FIXA NA PERSPECTIVA DO PONTO) */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -320,7 +320,7 @@
             </div>
 
             <div id="compassDirectionWrap" style="margin-top: 10px;">
-                <label style="text-align: center; color: #fff;">🧭 Aponte a direção absoluta da seta:</label>
+                <label style="text-align: center; color: #fff;">🧭 Aponte a direção da seta (ex: 0° = para frente):</label>
                 <div id="dial-container" onmousedown="startDialDrag(event)">
                     <div id="dial-needle"></div>
                     <div id="dial-center"></div>
@@ -378,7 +378,6 @@
     var isDialDragging = false;
     var startX = 0, startY = 0;
     var availableRepoImages = [];
-    var arrowNodes = [];
 
     function startDialDrag(e) {
         isDialDragging = true;
@@ -427,7 +426,6 @@
         document.documentElement.style.setProperty('--spot-size', size + 'px');
         document.documentElement.style.setProperty('--spot-opacity', (opacity / 100));
 
-        // Guarda diretamente no objeto global do tour
         tourData.default.spotSize = size;
         tourData.default.spotOpacity = opacity;
     }
@@ -486,7 +484,6 @@
     function exportTourFile() {
         if (Object.keys(tourData.scenes).length === 0) return alert('Nenhum ambiente adicionado ainda!');
         
-        // Garante que tamanho e opacidade atuais estejam gravados antes de exportar
         tourData.default.spotSize = parseInt(document.getElementById('inputSpotSize').value, 10);
         tourData.default.spotOpacity = parseInt(document.getElementById('inputSpotOpacity').value, 10);
 
@@ -509,7 +506,6 @@
                 if (loadedData.scenes && loadedData.default) {
                     tourData = loadedData;
                     
-                    // Aplica tamanho e opacidade salvos no arquivo
                     applyLoadedStyle(tourData.default.spotSize, tourData.default.spotOpacity);
 
                     var firstScene = tourData.default.firstScene || Object.keys(tourData.scenes)[0];
@@ -661,24 +657,10 @@
         document.getElementById('lightbox-overlay').style.display = 'none';
     }
 
-    function updateArrowsRotation() {
-        if (!viewer) return;
-        var currentYaw = viewer.getYaw();
-        for (var i = 0; i < arrowNodes.length; i++) {
-            var item = arrowNodes[i];
-            if (item.elem) {
-                var relativeAngle = item.baseAngle - currentYaw;
-                item.elem.style.transform = 'rotate(' + relativeAngle + 'deg)';
-            }
-        }
-        requestAnimationFrame(updateArrowsRotation);
-    }
-
     function rebuildViewer(targetSceneId) {
         currentSceneId = targetSceneId;
         renderScenesList();
         renderActiveSceneHotspots();
-        arrowNodes = [];
         if (viewer) { viewer.destroy(); viewer = null; }
 
         var cleanScenes = JSON.parse(JSON.stringify(tourData.scenes));
@@ -693,12 +675,13 @@
                     hotSpotDiv.style.backgroundColor = spotColor;
                     hotSpotDiv.style.setProperty('--current-spot-color', spotColor);
 
+                    // Seta orientada ao ponto no espaço (fixa na direção calibrada)
                     if (args.shape === 'shape-arrow') {
                         var arrowDiv = document.createElement('div');
                         arrowDiv.className = 'spot-arrow-center';
+                        arrowDiv.style.transform = 'rotate(' + (args.rotation || 0) + 'deg)';
                         arrowDiv.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3l8 17-8-5-8 5z"/></svg>';
                         hotSpotDiv.appendChild(arrowDiv);
-                        arrowNodes.push({ elem: arrowDiv, baseAngle: args.rotation || 0 });
                     }
                     
                     if (args.text && args.text.trim() !== '') {
@@ -947,8 +930,6 @@
         renderActiveSceneHotspots();
         rebuildViewer(currentSceneId);
     }
-
-    requestAnimationFrame(updateArrowsRotation);
 </script>
 </body>
 </html>
