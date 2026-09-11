@@ -29,7 +29,7 @@
             height: 100%;
         }
 
-        /* OVERLAY DE MARCA E LEAD GENERATION (CANTO SUPERIOR DIREITO) */
+        /* OVERLAY DE MARCA E LEAD GENERATION */
         #brand-overlay {
             position: absolute;
             top: 20px;
@@ -112,7 +112,7 @@
             background: #20ba5a;
         }
 
-        /* Marcador Base 2D Circular */
+        /* MARCADOR BASE 2D RIGOROSAMENTE SEM TRANSITION (CORREÇÃO DO DELAY) */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -126,17 +126,16 @@
             background-color: var(--spot-default-color);
             border: 2px solid #ffffff !important;
             box-shadow: 0 0 8px rgba(0, 0, 0, 0.6) !important;
-            transition: transform 0.2s ease, opacity 0.2s ease !important;
+            transition: none !important;
             overflow: visible !important;
         }
 
         .pnlm-hotspot-base:hover {
             opacity: 1 !important;
             background-color: #ffffff !important;
-            transform: scale(1.08) !important;
         }
 
-        /* Seta Centralizada Orientada ao Tour */
+        /* SETA CENTRALIZADA */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -169,7 +168,7 @@
             display: none !important;
         }
 
-        /* Texto Descritivo Afastado */
+        /* CONTAINER DE TEXTO EXCLUSIVO */
         .spot-label {
             position: absolute !important;
             left: 50% !important;
@@ -199,7 +198,7 @@
             bottom: auto !important;
         }
 
-        /* Lightbox para fotos de detalhe */
+        /* LIGHTBOX */
         #lightbox-overlay { 
             display: none; 
             position: fixed; 
@@ -234,7 +233,6 @@
 <body>
     <div id="panorama"></div>
 
-    <!-- OVERLAY DE MARCA E CONTATO -->
     <div id="brand-overlay" class="hidden">
         <div class="brand-header-wrap">
             <img id="brand-logo-img" src="" alt="Logo">
@@ -308,22 +306,18 @@
             }
         }
 
-        // EXECUÇÃO DO EFEITO WALKTHROUGH
         function executeWalkthrough(targetSceneId, targetPitch, targetYaw, spotPitch, spotYaw) {
             if (isTransitioning || !viewer) return;
             isTransitioning = true;
 
-            var defaultHfov = 100; // Campo de visão padrão confortável
+            var defaultHfov = 100;
 
-            // 1. Gira a câmera suavemente mirando no hotspot e dá um zoom in veloz (efeito de avançar)
             viewer.lookAt(spotPitch, spotYaw, 35, 450);
 
-            // 2. No final do avanço, carrega a cena de destino e abre o ângulo suavemente
             setTimeout(function() {
                 var arrivalYaw = (targetYaw !== undefined && targetYaw !== null) ? targetYaw : 0;
                 viewer.loadScene(targetSceneId, 0, arrivalYaw, 60);
 
-                // 3. Suaviza a abertura da visão ao chegar no novo ambiente
                 setTimeout(function() {
                     viewer.setHfov(defaultHfov, 500);
                     isTransitioning = false;
@@ -344,7 +338,6 @@
                     if (tourData.default.spotOpacity) {
                         document.documentElement.style.setProperty('--spot-opacity', (tourData.default.spotOpacity / 100));
                     }
-                    // Define tempo de fade ideal para o walkthrough
                     tourData.default.sceneFadeDuration = 400;
                     tourData.default.hfov = 100;
                 }
@@ -387,14 +380,12 @@
                             color: sp.color || '#f5b301'
                         };
 
-                        // Se for passagem de cômodo, aplica o Walkthrough cinematográfico
                         if (sp.type === 'scene') {
                             var destSceneId = sp.sceneId;
                             var destTargetYaw = sp.targetYaw;
                             var sPitch = sp.pitch;
                             var sYaw = sp.yaw;
 
-                            // Remove o click padrão do Pannellum para acionar a nossa função
                             sp.sceneId = undefined;
                             sp.clickHandlerFunc = function() {
                                 executeWalkthrough(destSceneId, 0, destTargetYaw, sPitch, sYaw);
