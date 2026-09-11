@@ -29,7 +29,18 @@
             height: 100%;
         }
 
-        /* OCULTA O BOX DE LOADING DURANTE TRANSIÇÕES PARA FICAR FLUIDO */
+        /* ACELERAÇÃO ÓTICA CONTÍNUA (WALKTHROUGH REAL) */
+        .pnlm-render-container {
+            transition: transform 0.55s cubic-bezier(0.25, 1, 0.5, 1) !important;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .walkthrough-zooming {
+            transform: scale(1.22) !important;
+        }
+
+        /* OCULTA CARREGAMENTO PARA MANTER TRANSIÇÃO LIMPA */
         .pnlm-load-box {
             display: none !important;
         }
@@ -117,7 +128,7 @@
             background: #20ba5a;
         }
 
-        /* MARCADOR BASE 2D SEM TRANSITION (ZERO DELAY) */
+        /* MARCADOR BASE 2D RIGOROSAMENTE FIXO */
         .pnlm-hotspot-base {
             width: var(--spot-size) !important;
             height: var(--spot-size) !important;
@@ -140,7 +151,7 @@
             background-color: #ffffff !important;
         }
 
-        /* SETA CENTRALIZADA ORIENTADA AO TOUR */
+        /* SETA CENTRALIZADA */
         .spot-arrow-center {
             position: absolute !important;
             top: 50% !important;
@@ -312,20 +323,29 @@
             }
         }
 
-        // TRANSIÇÃO FLUIDA: AVANÇO SUAVE SEM TRANCAS OU CAIXA DE LOADING
-        function executeSmoothWalk(targetSceneId, targetYaw, spotPitch, spotYaw) {
+        // WALKTHROUGH VIA EXPANSÃO ÓTICA CONTÍNUA (SEM QUEBRAS DE CÂMERA)
+        function triggerContinuousWalk(targetSceneId, targetYaw) {
             if (isTransitioning || !viewer) return;
             isTransitioning = true;
 
-            // 1. Gira a câmera suavemente na direção da passagem
-            viewer.lookAt(spotPitch, spotYaw, viewer.getHfov(), 300);
+            var renderContainer = document.querySelector('.pnlm-render-container');
 
-            // 2. Carrega a próxima cena com crossfade suave mantendo o campo de visão constante
+            // Dispara imediatamente o impulso óptico para a frente
+            if (renderContainer) {
+                renderContainer.classList.add('walkthrough-zooming');
+            }
+
+            // Carrega a cena de destino no mesmo fluxo contínuo
+            var arrivalYaw = (targetYaw !== undefined && targetYaw !== null) ? targetYaw : 0;
+            viewer.loadScene(targetSceneId, 0, arrivalYaw, viewer.getHfov());
+
+            // Normaliza a escala suavemente após a fusão da nova foto
             setTimeout(function() {
-                var arrivalYaw = (targetYaw !== undefined && targetYaw !== null) ? targetYaw : 0;
-                viewer.loadScene(targetSceneId, 0, arrivalYaw, viewer.getHfov());
+                if (renderContainer) {
+                    renderContainer.classList.remove('walkthrough-zooming');
+                }
                 isTransitioning = false;
-            }, 250);
+            }, 550);
         }
 
         fetch('tour_config.json')
@@ -341,7 +361,7 @@
                     if (tourData.default.spotOpacity) {
                         document.documentElement.style.setProperty('--spot-opacity', (tourData.default.spotOpacity / 100));
                     }
-                    // Dissolve contínuo e rápido
+                    // Transição de fusão sincronizada com o impulso ótico
                     tourData.default.sceneFadeDuration = 500;
                 }
 
@@ -386,12 +406,10 @@
                         if (sp.type === 'scene') {
                             var destSceneId = sp.sceneId;
                             var destTargetYaw = sp.targetYaw;
-                            var sPitch = sp.pitch;
-                            var sYaw = sp.yaw;
 
                             sp.sceneId = undefined;
                             sp.clickHandlerFunc = function() {
-                                executeSmoothWalk(destSceneId, destTargetYaw, sPitch, sYaw);
+                                triggerContinuousWalk(destSceneId, destTargetYaw);
                             };
                         } else if (sp.type === 'info') {
                             sp.clickHandlerFunc = (function(spot) {
